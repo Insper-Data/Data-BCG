@@ -52,3 +52,20 @@ def get_birthplaces(all_countries=True):
                     print("there was a problem or no players for {}".format(country))
     return df
 
+
+def get_high_school_cities():
+
+    df = pd.DataFrame()
+
+    for state in countries_and_states.us_states.Code:
+        url_data = requests.get("https://www.basketball-reference.com/friv/high_schools.fcgi?state={}".format(state)).text
+        soup = BeautifulSoup(url_data, "lxml")
+        rows = soup.findAll("tr")[1:]
+        player_school = [[td.getText() for td in rows[i].findAll("td")] for i in range(len(rows))]
+        df_i = pd.DataFrame(player_school)
+        df_i = df_i[[0, 2]].rename(columns={0: "Player", 2: "HS_City"})
+        df_i.dropna(inplace=True)
+        df = df.append(df_i)
+        print("{}, succesful".format(state))
+
+    return df
