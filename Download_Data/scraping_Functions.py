@@ -1,8 +1,8 @@
 import requests
 import pandas as pd
-from bs4 import BeautifulSoup
 import countries_and_states
-
+import lxml
+from bs4 import BeautifulSoup
 
 def get_season_data(year):
 
@@ -51,5 +51,4 @@ def get_birthplaces(all_countries=True):
                 except:
                     print("there was a problem or no players for {}".format(country))
     return df
-
 
