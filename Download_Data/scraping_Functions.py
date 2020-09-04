@@ -13,6 +13,7 @@ def get_season_data(year):
     rows = soup_season.findAll("tr")[1:]
     player_stats = [[td.getText() for td in rows[i].findAll("td")] for i in range(len(rows))]
     stats = pd.DataFrame(player_stats, columns=header)
+    stats.dropna(inplace=True)
     return stats
 
 
@@ -50,4 +51,5 @@ def get_birthplaces(all_countries=True):
                 except:
                     print("there was a problem or no players for {}".format(country))
     return df
+
 
