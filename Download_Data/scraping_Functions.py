@@ -14,6 +14,7 @@ def get_season_data(year):
     player_stats = [[td.getText() for td in rows[i].findAll("td")] for i in range(len(rows))]
     stats = pd.DataFrame(player_stats, columns=header)
     stats.dropna(inplace=True)
+    stats = stats.applymap(lambda x: pd.to_numeric(x, errors='ignore', downcast='float'))
     return stats
 
 
@@ -69,3 +70,36 @@ def get_high_school_cities():
         print("{}, succesful".format(state))
 
     return df
+
+
+def get_aggregated_season_data(initial_year=2010, final_year=2020):
+    """
+    Get season data from each player from several years
+    """
+
+    desired_years = range(initial_year, final_year + 1)
+
+    columns = [x for x in list(get_season_data(2018).columns)]
+    columns.append("GMSC")
+    columns.append("YEAR")
+
+    seasons_data = pd.DataFrame(columns=columns)
+
+    for year in desired_years:
+
+        print("Running year {}...".format(year))
+
+        df = pd.DataFrame(get_season_data(year))
+
+        df["GMSC"] = (df.PTS + 0.4 * df.FG - 0.7 * df.FGA -
+                      0.4 * (df.FTA - df.FT) + 0.7 * df.ORB +
+                      0.3 * df.DRB + df.STL + 0.7 * df.AST +
+                      0.7 * df.BLK - 0.4 * df.PF - df.TOV)
+
+        df["YEAR"] = year
+
+        seasons_data = seasons_data.append(df)
+
+    return seasons_data
+
+
