@@ -1,0 +1,68 @@
+---
+t itle: "NBA-birthplaces"
+output: html_document
+---
+
+# Packages used
+
+```{r}
+library(tidyverse)
+library(rvest)
+```
+
+# HTML nodes function
+
+Pulls HTML nodes that contain the personal webpage of each NBA player from the web given one year.
+
+```{r}
+get_nodes <- 
+  . %>% 
+  str_c("https://www.basketball-reference.com/leagues/NBA_",
+        ., "_per_game.html") %>% 
+  read_html() %>% 
+  html_nodes("th+ .left a")
+```
+
+# Find birthplace function
+
+Given a link to the personal page of a player, the function finds and returns the player's birthplace from the webpage.
+
+```{r}
+get_birthplace <- 
+  . %>% 
+  read_html() %>% 
+  html_node("#meta") %>% 
+  html_text() %>% 
+  str_squish() %>% 
+  str_extract("Born: .*") %>% 
+  str_remove("[^(Born)]:.*") %>% 
+  str_remove(".* in ") %>% 
+  str_extract("^.* .. ") %>% 
+  str_trim()
+```
+
+# Tibble assemble function
+
+Using the previous functions, it generates a tibble with the player names, webpage link, city of birth, state of birth and country of birth. It works given a vector of desired years.
+
+```{r}
+get_tibble <- 
+  . %>% 
+  map(get_nodes) %>% 
+  map_dfr(~ tibble(name = .x %>% html_text(),
+         link = str_c("https://www.basketball-reference.com",
+                      .x %>% html_attr("href")))) %>% 
+  distinct(name, link) %>% 
+  mutate(birthplace = sapply(link, get_birthplace)) %>% 
+  separate(birthplace, into = c("city", "country_iso2"), sep = -2) %>% 
+  separate(city, into = c("city", "state"), sep = ", ") %>% 
+  mutate(state = str_trim(state),
+         country_iso2 = str_to_upper(country_iso2))
+```
+
+# Running function
+
+```{r}
+birthplaces <- get_tibble(1980:2020)
+birthplaces
+```
