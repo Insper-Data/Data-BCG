@@ -18,10 +18,8 @@ high_schools = sf.get_high_school_cities()
 # Standardizing each database
 
 # I removed the * at the end of the name of the players from every player
-# Reduced the sample to data from 1980 on
 
 performance.player = performance.player.str.replace("\*", "")
-performance = performance[performance.year >= 1980]
 
 # Eliminated columns that weren't useful to the final database
 high_schools = high_schools.iloc[:, [0, 1, 2]].rename(str.lower, axis = "columns")
@@ -36,9 +34,6 @@ birthplaces = birthplaces.iloc[:, [0, 1, 3]]
 # Merged the databases into one, restricting the data with "inner"
 performance_aggr = pd.merge(performance, birthplaces, how="inner", on="player")
 performance_aggr = pd.merge(performance_aggr, high_schools, how="inner", on=["player", "state"])
-
-# Removed first column of performance_aggr
-# performance_aggr = performance_aggr.iloc[:, 1:]
 
 # Created a database with less columns for a less noisy visualization
 performance_aggr_gmsc = performance_aggr[["year", "player", "gmsc", "birthplace", "state", "hs_city"]]
