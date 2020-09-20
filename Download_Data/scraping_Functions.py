@@ -107,5 +107,3 @@ def get_aggregated_season_data(initial_year=2010, final_year=2020):
         seasons_data = seasons_data.append(df)
 
     return seasons_data.rename(str.lower, axis = "columns")
-
-df = get_high_school_cities()
