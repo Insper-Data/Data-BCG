@@ -13,7 +13,7 @@ import scraping_Functions as sf
 
 performance = sf.get_aggregated_season_data(1980)
 birthplaces = sf.get_birthplaces()
-high_schools = get_high_school_cities()
+high_schools = sf.get_high_school_cities()
 
 # Standardizing each database
 
@@ -24,21 +24,21 @@ performance.player = performance.player.str.replace("\*", "")
 performance = performance[performance.year >= 1980]
 
 # Eliminated columns that weren't useful to the final database
-high_schools = high_schools.iloc[:, [1, 2]].rename(str.lower, axis = "columns")
+high_schools = high_schools.iloc[:, [0, 1, 2]].rename(str.lower, axis = "columns")
 high_schools.player = high_schools.player.str.replace("\*", "")
 
 # Restricted the sample to players that were born in the US
 # Eliminated columns that weren't useful to the final database
-birthplaces.name = birthplaces.name.str.replace("\*", "")
+birthplaces.player = birthplaces.player.str.replace("\*", "")
 birthplaces = birthplaces[birthplaces.country_iso2 == "US"]
-birthplaces = birthplaces.iloc[:, [0, 2, 3]]
+birthplaces = birthplaces.iloc[:, [0, 1, 3]]
 
 # Merged the databases into one, restricting the data with "inner"
-performance_aggr = pd.merge(performance, birthplaces, how="inner", left_on="player", right_on="name")
-performance_aggr = pd.merge(performance_aggr, high_schools, how="inner", on="player")
+performance_aggr = pd.merge(performance, birthplaces, how="inner", on="player")
+performance_aggr = pd.merge(performance_aggr, high_schools, how="inner", on=["player", "state"])
 
 # Removed first column of performance_aggr
-performance_aggr = performance_aggr.iloc[:, 1:]
+# performance_aggr = performance_aggr.iloc[:, 1:]
 
 # Created a database with less columns for a less noisy visualization
-performance_aggr_gmsc = performance_aggr[["year", "player", "gmsc", "city", "state", "hs_city"]]
+performance_aggr_gmsc = performance_aggr[["year", "player", "gmsc", "birthplace", "state", "hs_city"]]

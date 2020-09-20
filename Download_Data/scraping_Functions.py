@@ -31,10 +31,10 @@ def get_birthplaces(all_countries=True):
                     rows = soup.findAll("tr")[1:]
                     player_birthplace = [[td.getText() for td in rows[i].findAll("td")] for i in range(len(rows))]
                     df_i = pd.DataFrame(player_birthplace)
-                    df_i = df_i[[0, 28]].rename(columns={0: "Player", 28: "Birthplace"})
+                    df_i = df_i[[0, 28]].rename(columns={0: "player", 28: "birthplace"})
                     df_i.dropna(inplace=True)
-                    df_i.insert(1, "State", state)
-                    df_i.insert(2, "Country", country)
+                    df_i.insert(1, "state", state)
+                    df_i.insert(2, "country_iso2", country)
                     df = df.append(df_i)
                     print("{}, {}, succesful".format(country, state))
                 except:
@@ -48,10 +48,10 @@ def get_birthplaces(all_countries=True):
                     rows = soup.findAll("tr")[1:]
                     player_birthplace = [[td.getText() for td in rows[i].findAll("td")] for i in range(len(rows))]
                     df_i = pd.DataFrame(player_birthplace)
-                    df_i = df_i[[0, 28]].rename(columns={0: "Player", 28: "Birthplace"})
+                    df_i = df_i[[0, 28]].rename(columns={0: "player", 28: "birthplace"})
                     df_i.dropna(inplace=True)
-                    df_i.insert(1, "State", state)
-                    df_i.insert(2, "Country", country)
+                    df_i.insert(1, "state", state)
+                    df_i.insert(2, "country_iso2", country)
                     df = df.append(df_i)
                     print("{}, succesful".format(country))
                 except:
@@ -69,9 +69,9 @@ def get_high_school_cities():
         rows = soup.findAll("tr")[1:]
         player_school = [[td.getText() for td in rows[i].findAll("td")] for i in range(len(rows))]
         df_i = pd.DataFrame(player_school)
-        df_i = df_i[[0, 2]].rename(columns={0: "Player", 2: "HS_City"})
+        df_i = df_i[[0, 2]].rename(columns={0: "player", 2: "hs_city"})
         df_i.dropna(inplace=True)
-        df_i.insert(1, "State", state)
+        df_i.insert(1, "state", state)
         df = df.append(df_i)
         print("{}, succesful".format(state))
 
@@ -107,3 +107,5 @@ def get_aggregated_season_data(initial_year=2010, final_year=2020):
         seasons_data = seasons_data.append(df)
 
     return seasons_data.rename(str.lower, axis = "columns")
+
+df = get_high_school_cities()
