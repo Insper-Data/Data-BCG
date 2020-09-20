@@ -10,6 +10,7 @@ sys.path.insert(1, download_wd)
 import scraping_Functions as sf
 
 # Pulling the data from a .csv file
+
 performance = sf.get_aggregated_season_data(1980)
 birthplaces = sf.get_birthplaces()
 high_schools = get_high_school_cities()

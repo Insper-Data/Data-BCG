@@ -25,6 +25,7 @@ def get_birthplaces(all_countries=True):
         if country == "US":
             for state in countries_and_states.us_states.Code:
                 try:
+                    link_i = "https://www.basketball-reference.com/friv/birthplaces.fcgi?country={}&state={}".format(country, state)
                     url_data = requests.get("https://www.basketball-reference.com/friv/birthplaces.fcgi?country={}&state={}".format(country, state)).text
                     soup = BeautifulSoup(url_data, "lxml")
                     rows = soup.findAll("tr")[1:]
@@ -32,6 +33,8 @@ def get_birthplaces(all_countries=True):
                     df_i = pd.DataFrame(player_birthplace)
                     df_i = df_i[[0, 28]].rename(columns={0: "Player", 28: "Birthplace"})
                     df_i.dropna(inplace=True)
+                    df_i.insert(1, "State", state)
+                    df_i.insert(2, "Country", country)
                     df = df.append(df_i)
                     print("{}, {}, succesful".format(country, state))
                 except:
@@ -39,6 +42,7 @@ def get_birthplaces(all_countries=True):
         else:
             if all_countries:
                 try:
+                    link_i = "https://www.basketball-reference.com/friv/birthplaces.fcgi?country={}&state={}".format(country, state)
                     url_data = requests.get("https://www.basketball-reference.com/friv/birthplaces.fcgi?country={}&state=".format(country)).text
                     soup = BeautifulSoup(url_data, "lxml")
                     rows = soup.findAll("tr")[1:]
@@ -46,6 +50,8 @@ def get_birthplaces(all_countries=True):
                     df_i = pd.DataFrame(player_birthplace)
                     df_i = df_i[[0, 28]].rename(columns={0: "Player", 28: "Birthplace"})
                     df_i.dropna(inplace=True)
+                    df_i.insert(1, "State", state)
+                    df_i.insert(2, "Country", country)
                     df = df.append(df_i)
                     print("{}, succesful".format(country))
                 except:
@@ -65,6 +71,7 @@ def get_high_school_cities():
         df_i = pd.DataFrame(player_school)
         df_i = df_i[[0, 2]].rename(columns={0: "Player", 2: "HS_City"})
         df_i.dropna(inplace=True)
+        df_i.insert(1, "State", state)
         df = df.append(df_i)
         print("{}, succesful".format(state))
 
