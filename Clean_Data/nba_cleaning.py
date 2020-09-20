@@ -1,9 +1,18 @@
 import pandas as pd
+import os
+import sys
+
+cwd = os.getcwd()
+project_wd = os.path.dirname(cwd)
+download_wd = os.path.join(project_wd, "Download_Data")
+sys.path.insert(1, download_wd)
+
+import scraping_Functions as sf
 
 # Pulling the data from a .csv file
-performance = pd.read_csv("C:/Users/USER/Downloads/performance_nba.csv")
-birthplaces = pd.read_csv("C:/Users/USER/Downloads/nba_birthplaces.csv")
-high_schools = pd.read_csv("C:/Users/USER/Downloads/high_schools.csv")
+performance = sf.get_aggregated_season_data(1980)
+birthplaces = sf.get_birthplaces()
+high_schools = get_high_school_cities()
 
 # Standardizing each database
 
@@ -27,9 +36,8 @@ birthplaces = birthplaces.iloc[:, [0, 2, 3]]
 performance_aggr = pd.merge(performance, birthplaces, how="inner", left_on="player", right_on="name")
 performance_aggr = pd.merge(performance_aggr, high_schools, how="inner", on="player")
 
+# Removed first column of performance_aggr
+performance_aggr = performance_aggr.iloc[:, 1:]
+
 # Created a database with less columns for a less noisy visualization
 performance_aggr_gmsc = performance_aggr[["year", "player", "gmsc", "city", "state", "hs_city"]]
-
-# Transformed both databases into .csv files
-performance_aggr_gmsc.to_csv("C:/Users/USER/Downloads/performance_gmsc.csv")
-performance_aggr.to_csv("C:/Users/USER/Downloads/performance_complete.csv")

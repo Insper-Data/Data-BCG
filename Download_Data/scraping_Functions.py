@@ -1,7 +1,6 @@
 import requests
 import pandas as pd
 import countries_and_states
-import lxml
 from bs4 import BeautifulSoup
 
 def get_season_data(year):

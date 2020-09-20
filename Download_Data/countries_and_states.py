@@ -1,4 +1,12 @@
 import pandas as pd
+import os
 
-countries = pd.read_csv("Data/all_Countries.csv")
-us_states = pd.read_csv("Data/us_States.csv")
+cwd = os.getcwd()
+project_wd = os.path.dirname(cwd)
+download_wd = os.path.join(project_wd, "Download_Data")
+data_wd = os.path.join(download_wd, "Data")
+countries_wd = os.path.join(data_wd, "all_Countries.csv")
+us_states_wd = os.path.join(data_wd, "us_States.csv")
+
+countries = pd.read_csv(countries_wd)
+us_states = pd.read_csv(us_states_wd)
