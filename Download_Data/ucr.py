@@ -85,9 +85,6 @@ def get_ucr_links(data_wanted="All"):
 
     return links
 
-get_ucr_links("Supplementary Homicide Reports")
-get_ucr_links()
-
 # Login e senha do site do UCR
 # gustavobsales@gmail.com
 # wKqyAc5MchiihLEhE99r
