@@ -74,7 +74,7 @@ def crawler(link, wait=60):
     time.sleep(wait)
     bot.close()
 
-def get_ucr_data(data_wanted="All"):
+def get_ucr_data(data_wanted="All", wait=60):
     """
     O texto inserido deve ser uma das seguintes strings:
             Arrests by Age, Sex, and Race, monthly reports \n
@@ -137,11 +137,11 @@ def get_ucr_data(data_wanted="All"):
     links.name = links.name.apply(lambda x: change_names(x))
 
     if data_wanted.lower() == "all":
-        [crawler(link) for link in links.link.tolist()]
+        [crawler(link, wait) for link in links.link.tolist()]
         return
 
     links = links[links.name == data_wanted]
 
-    [crawler(link) for link in links.link.tolist()]
+    [crawler(link, wait) for link in links.link.tolist()]
 
     return
