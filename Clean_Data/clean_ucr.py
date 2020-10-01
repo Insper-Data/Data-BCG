@@ -11,14 +11,13 @@ def get_filepath(message):
     root.withdraw()
     return filedialog.askdirectory(title=message)
 
-db_path = get_filepath("Selecione a pasta que contém a base desejada")
+db_path = get_filepath("Selecione a pasta que contém as bases desejadas")
 
-for year in os.listdir(db_path):
+for pasta in os.listdir(db_path):
 
-    stata_path = os.path.join(db_path, str(year), "DS0001")
-    dir_files = os.listdir(stata_path)
-    stata_name = [file for file in dir_files if re.match(".*dta$", file)][0]
-    file_wd = os.path.join(stata_path, stata_name)
+    print("Carregando pasta " + pasta)
+
+    file_wd = os.path.join(db_path, pasta)
 
     data = pd.read_stata(file_wd, chunksize=100000)
 
@@ -35,4 +34,5 @@ for year in os.listdir(db_path):
 
         db = db.append(df)
 
-    db.to_csv(os.path.join(db_path, str(year) + ".csv"))
+    filename = db.YEAR[0]
+    db.to_csv(os.path.join(db_path, str(filename) + ".csv"))
