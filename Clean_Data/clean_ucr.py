@@ -1,9 +1,9 @@
-import pandas as pd
 import os
 import tkinter as tk
 from tkinter import filedialog
-import re
 from siuba import *
+import re
+import pandas as pd
 
 ######## Getting File Directory
 def get_filepath(message):
@@ -12,8 +12,9 @@ def get_filepath(message):
     return filedialog.askdirectory(title=message)
 
 db_path = get_filepath("Selecione a pasta que contém as bases desejadas")
+files = [file for file in os.listdir(db_path) if re.match(".*dta$", file)]
 
-for pasta in os.listdir(db_path):
+for pasta in files:
 
     print("Carregando pasta " + pasta)
 
@@ -36,3 +37,4 @@ for pasta in os.listdir(db_path):
 
     filename = db.YEAR[0]
     db.to_csv(os.path.join(db_path, str(filename) + ".csv"))
+    os.remove(file_wd)
