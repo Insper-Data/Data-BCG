@@ -11,30 +11,53 @@ def get_filepath(message):
     root.withdraw()
     return filedialog.askdirectory(title=message)
 
-db_path = get_filepath("Selecione a pasta que contém as bases desejadas")
-files = [file for file in os.listdir(db_path) if re.match(".*dta$", file)]
+def clean_arrests():
+    db_path = get_filepath("Selecione a pasta que contém as bases desejadas")
+    files = [file for file in os.listdir(db_path) if re.match(".*dta$", file)]
 
-for pasta in files:
+    for pasta in files:
 
-    print("Carregando pasta " + pasta)
+        print("Carregando pasta " + pasta)
 
-    file_wd = os.path.join(db_path, pasta)
+        file_wd = os.path.join(db_path, pasta)
 
-    data = pd.read_stata(file_wd, chunksize=100000)
+        data = pd.read_stata(file_wd, chunksize=100000)
 
-    db = pd.DataFrame()
+        db = pd.DataFrame()
 
-    for df in data:
+        for df in data:
 
-        df = (df >>
-         select(_["ORI", "YEAR", "MSA",
-                "SEQNO", "SUB", "CORE",
-               "OFFENSE":"JN", "ZERO"]) >>
-         filter(_.ZERO == "Not used") >>
-         select(-_.ZERO))
+            df = (df >>
+             select(_["ORI", "YEAR", "MSA",
+                    "SEQNO", "SUB", "CORE",
+                   "OFFENSE":"JN", "ZERO"]) >>
+             filter(_.ZERO == "Not used") >>
+             select(-_.ZERO))
 
-        db = db.append(df)
+            db = db.append(df)
 
-    filename = db.YEAR[0]
-    db.to_csv(os.path.join(db_path, str(filename) + ".csv"))
-    os.remove(file_wd)
+        filename = db.YEAR.iloc[0]
+        db.to_csv(os.path.join(db_path, str(filename) + ".csv"))
+        os.remove(file_wd)
+
+def clean_offenses():
+    db_path = get_filepath("Selecione a pasta que contém as bases desejadas")
+    files = [file for file in os.listdir(db_path) if re.match(".*dta$", file)]
+
+    for pasta in files:
+
+        print("Carregando pasta " + pasta)
+
+        file_wd = os.path.join(db_path, pasta)
+
+        data = pd.read_stata(file_wd, chunksize=10000)
+
+        db = pd.DataFrame()
+
+        for df in data:
+
+            db = db.append(df)
+
+        filename = db.V6.iloc[0]
+        db.to_csv(os.path.join(db_path, str(filename) + ".csv"))
+        os.remove(file_wd)
