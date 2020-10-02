@@ -61,3 +61,47 @@ def clean_offenses():
         filename = db.V6.iloc[0]
         db.to_csv(os.path.join(db_path, str(filename) + ".csv"))
         os.remove(file_wd)
+
+def clean_homicides():
+    db_path = get_filepath("Selecione a pasta que contém as bases desejadas")
+    files = [file for file in os.listdir(db_path) if re.match(".*dta$", file)]
+
+    for pasta in files:
+
+        print("Carregando pasta " + pasta)
+
+        file_wd = os.path.join(db_path, pasta)
+
+        data = pd.read_stata(file_wd, chunksize=10000)
+
+        db = pd.DataFrame()
+
+        for df in data:
+
+            db = db.append(df)
+
+        filename = db.V6.iloc[0]
+        db.to_csv(os.path.join(db_path, str(filename) + ".csv"))
+        os.remove(file_wd)
+
+def clean_police():
+    db_path = get_filepath("Selecione a pasta que contém as bases desejadas")
+    files = [file for file in os.listdir(db_path) if re.match(".*dta$", file)]
+
+    for pasta in files:
+
+        print("Carregando pasta " + pasta)
+
+        file_wd = os.path.join(db_path, pasta)
+
+        data = pd.read_stata(file_wd, chunksize=10000)
+
+        db = pd.DataFrame()
+
+        for df in data:
+
+            db = db.append(df)
+
+        filename = db.V6.iloc[0]
+        db.to_csv(os.path.join(db_path, str(filename) + ".csv"))
+        os.remove(file_wd)
