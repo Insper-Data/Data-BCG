@@ -12,12 +12,6 @@ ProgressBar().register()
 cwd = os.getcwd()
 project_wd = os.path.dirname(cwd)
 
-# Lendo códigos Fips dos estados
-state_fips_wd = os.path.join(project_wd, "Download_Data/Data/fips_state.csv")
-state_fips = pd.read_csv(state_fips_wd)
-state_fips.drop(columns="state", inplace=True)
-state_fips.rename(columns={"fips_code": "STATEFIP", "post_code": "state"}, inplace=True)
-
 # Lendo dataframe com anos desejados apenas
 textfilereader = pd.read_csv("raw_data/cps.csv", iterator=True, index_col=[0])
 df = textfilereader.get_chunk(5000)
@@ -29,19 +23,28 @@ missing_value_df = missing_value_df[missing_value_df["percent_missing"]==100]
 missing_cols = list(missing_value_df["column_name"])
 
 # Removendo anos indesejados
-anos = list(range(2000, 2016))
 dask_df = dd.read_csv("raw_data/cps.csv", assume_missing=True)
-dask_df = dask_df[dask_df.YEAR.isin(anos)]
 
 # Removendo colunas com apenas Nas
 dask_df = dask_df.drop(missing_cols, axis=1)
+
+# Computando
+dask_df = dask_df.compute()
 
 # Corrigindo Income pela inflação
 dask_df["HHINCOME"] = dask_df["HHINCOME"] * dask_df["CPI99"]
 dask_df["FAMINC"] = dask_df["FAMINC"] * dask_df["CPI99"]
 
-# Dando join com estado
-dask_df = dd.merge(dask_df, state_fips, how="left", on="STATEFIP")
-
 # Salvando dataframe
-dask_df.to_csv("cleaned_data/cps_2000_2016_cleaned.csv", single_file=True, index=False)
+dask_df.to_csv("cleaned_data/cps_cleaned.csv")
+
+# Separando por anos
+anos_80_99 = list(range(1980, 1999))
+cps_80_99 = dask_df[dask_df.YEAR.isin(anos_80_99)]
+
+anos_20_16 = list(range(2000, 2016))
+cps_20_16 = dask_df[dask_df.YEAR.isin(anos_20_16)]
+
+# Salvando dataframes
+cps_80_99.to_csv("cleaned_data/cps_1980_1999_cleaned.csv")
+cps_20_16.to_csv("cleaned_data/cps_2000_2016_cleaned.csv")
