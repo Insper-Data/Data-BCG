@@ -28,7 +28,7 @@ def clean_arrests():
         for df in data:
 
             df = (df >>
-             select(_["ORI", "YEAR", "MSA",
+             select(_["ORI", "STATE", "STNAME", "YEAR", "MSA",
                     "SEQNO", "SUB", "CORE",
                    "OFFENSE":"JN", "ZERO"]) >>
              filter(_.ZERO == "Not used") >>
