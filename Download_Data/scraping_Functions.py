@@ -3,6 +3,27 @@ import pandas as pd
 import countries_and_states
 from bs4 import BeautifulSoup
 
+
+def get_players_id():
+
+    letters = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k",
+               "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
+
+    player_ids = pd.DataFrame()
+
+    for letter in letters:
+        url_data = requests.get("https://www.basketball-reference.com/players/{}/".format(letter)).text
+        soup_id = BeautifulSoup(url_data, "lxml")
+        rows = soup_id.findAll("tr")[1:]
+        player_names_i = [row.findAll("th")[0].get_text() for row in rows]
+        ids_i = [row.findAll("th")[0].attrs["data-append-csv"] for row in rows]
+        dict_i = {"Player": player_names_i, "id": ids_i}
+        df_i = pd.DataFrame(dict_i)
+        player_ids = player_ids.append(df_i)
+
+    return player_ids
+
+
 def get_season_data(year):
 
     url_data = requests.get("https://www.basketball-reference.com/leagues/NBA_{}_per_game.html".format(year)).text
@@ -14,7 +35,23 @@ def get_season_data(year):
     stats = pd.DataFrame(player_stats, columns=header)
     stats.dropna(inplace=True)
     stats = stats.applymap(lambda x: pd.to_numeric(x, errors='ignore', downcast='float'))
+
     return stats
+
+
+def get_game_data(year):
+
+    ids_df = get_players_id()
+
+    for id in ids_df["id"]:
+        url_data = requests.get("https://www.basketball-reference.com/players/a/{}}/gamelog/{}}/".format(id, year)).text
+
+
+
+
+
+
+
 
 
 def get_birthplaces(all_countries=True):
@@ -107,5 +144,3 @@ def get_aggregated_season_data(initial_year=2010, final_year=2020):
         seasons_data = seasons_data.append(df)
 
     return seasons_data.rename(str.lower, axis = "columns")
-
-teste = get_birthplaces(all_countries=False)
