@@ -48,3 +48,5 @@ cps_20_16 = dask_df[dask_df.YEAR.isin(anos_20_16)]
 # Salvando dataframes
 cps_80_99.to_csv("cleaned_data/cps_1980_1999_cleaned.csv")
 cps_20_16.to_csv("cleaned_data/cps_2000_2016_cleaned.csv")
+
+
