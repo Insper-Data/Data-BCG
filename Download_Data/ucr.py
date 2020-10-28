@@ -4,6 +4,14 @@ import requests
 import pandas as pd
 import re
 import time
+import os
+import tkinter as tk
+from tkinter import filedialog
+
+def get_filepath(message):
+    root = tk.Tk()
+    root.withdraw()
+    return filedialog.askdirectory(title=message)
 
 def change_names(name):
     if name == 0:
@@ -17,7 +25,9 @@ def change_names(name):
     elif name == 4:
         return "Police Employee (LEOKA) Data"
 
-def crawler(link, wait=60):
+def crawler(link, download_wd):
+
+    regex = re.compile(".*\.crdownload$")
 
     if not isinstance(link, str):
         return "Inserted link should be a string"
@@ -62,6 +72,7 @@ def crawler(link, wait=60):
             # Close Chrome
             self.driver.close()
 
+    size_downloads = len([files for files in os.listdir(download_wd) if not regex.match(files)])
     bot = download_ucr_data(link)
     bot.enter_page()
     bot.click_download()
@@ -71,10 +82,13 @@ def crawler(link, wait=60):
     bot.agree()
     time.sleep(2)
     bot.login()
-    time.sleep(wait)
+
+    while len([files for files in os.listdir(download_wd) if not regex.match(files)]) == size_downloads:
+        time.sleep(3)
+
     bot.close()
 
-def get_ucr_data(data_wanted="All", wait=60):
+def get_ucr_data(data_wanted="All"):
     """
     O texto inserido deve ser uma das seguintes strings:
             Arrests by Age, Sex, and Race, monthly reports \n
@@ -107,6 +121,7 @@ def get_ucr_data(data_wanted="All", wait=60):
     soup_season = BeautifulSoup(url_data, "lxml")
     linkloc = soup_season.findAll('a', attrs={'href': re.compile("^https?://")})
     links = pd.DataFrame(columns=["year", "link"])
+    download_wd = get_filepath("Selecione sua pasta de Downloads")
 
     for link in linkloc:
         link_text = link.findAll(text=True)
@@ -137,11 +152,15 @@ def get_ucr_data(data_wanted="All", wait=60):
     links.name = links.name.apply(lambda x: change_names(x))
 
     if data_wanted.lower() == "all":
-        [crawler(link, wait) for link in links.link.tolist()]
+        [crawler(link, download_wd) for link in links.link.tolist()]
         return
 
     links = links[links.name == data_wanted]
 
-    [crawler(link, wait) for link in links.link.tolist()]
+    if data_wanted.lower() == "Arrests by Age, Sex, and Race, monthly reports".lower():
+        [crawler(link, download_wd) for link in links.link.tolist()[19::]]
+        return
+
+    [crawler(link, download_wd) for link in links.link.tolist()]
 
     return
