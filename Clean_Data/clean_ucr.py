@@ -20,7 +20,7 @@ def get_filepath(message):
     root.withdraw()
     return filedialog.askdirectory(title=message)
 
-def clean_arrests():
+def clean_arrests_process():
     db_path = get_filepath("Selecione a pasta que contém as bases desejadas")
     files = [file for file in os.listdir(db_path) if re.match(".*dta$", file)]
 
@@ -42,14 +42,72 @@ def clean_arrests():
              filter(_.ZERO == "Not used") >>
              select(-_.ZERO))
 
-            df = df.merge(agencies_data, how="inner", left_on="ORI", right_on="ori")
-            df = df.merge(fips_data, how="inner", left_on="fips_state_county_code", right_on="county_fips")
-            df = df.drop(columns=["ORI", "ori", "fips_state_county_code", "county_fips"])
-
             db = db.append(df)
 
         filename = db.YEAR.iloc[0]
         db.to_csv(os.path.join(db_path, str(filename) + ".csv"))
+
+df = df.merge(agencies_data, how="inner", left_on="ORI", right_on="ori")
+df = df.merge(fips_data, how="inner", left_on="fips_state_county_code", right_on="county_fips")
+df = df.drop(columns=["ORI", "ori", "fips_state_county_code", "county_fips"])
+
+def clean_arrests_joinagencies():
+    db_path = get_filepath("Selecione a pasta que contém as bases desejadas")
+    files = [file for file in os.listdir(db_path) if re.match(".*csv$", file)]
+
+    for pasta in files:
+        print("Carregando pasta " + pasta)
+
+        file_wd = os.path.join(db_path, pasta)
+
+        data = pd.read_stata(file_wd, chunksize=100000)
+
+        db = pd.DataFrame()
+
+        for df in data:
+            db = db.append(pd.merge(df, agencies_data, how="inner", left_on="ORI", right_on="ori"))
+
+        os.remove(file_wd)
+        db.to_csv(file_wd)
+
+
+def clean_arrests_joinfips():
+    db_path = get_filepath("Selecione a pasta que contém as bases desejadas")
+    files = [file for file in os.listdir(db_path) if re.match(".*csv$", file)]
+
+    for pasta in files:
+        print("Carregando pasta " + pasta)
+
+        file_wd = os.path.join(db_path, pasta)
+
+        data = pd.read_stata(file_wd, chunksize=100000)
+
+        db = pd.DataFrame()
+
+        for df in data:
+            db = db.append(pd.merge(df, fips_data, how="inner", left_on="fips_state_county_code", right_on="county_fips"))
+
+        os.remove(file_wd)
+        db.to_csv(file_wd)
+
+def clean_arrests_finishdrop():
+    db_path = get_filepath("Selecione a pasta que contém as bases desejadas")
+    files = [file for file in os.listdir(db_path) if re.match(".*csv$", file)]
+
+    for pasta in files:
+        print("Carregando pasta " + pasta)
+
+        file_wd = os.path.join(db_path, pasta)
+
+        data = pd.read_stata(file_wd, chunksize=100000)
+
+        db = pd.DataFrame()
+
+        for df in data:
+            db = db.append(df.drop(columns=["ORI", "ori", "fips_state_county_code", "county_fips"]))
+
+        os.remove(file_wd)
+        db.to_csv(file_wd)
 
 def clean_offenses():
     db_path = get_filepath("Selecione a pasta que contém as bases desejadas")
