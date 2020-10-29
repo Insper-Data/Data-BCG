@@ -58,31 +58,26 @@ def get_game_data(year):
 
     for id in ids_df["id"]:
 
-        try:
+        url_data = requests.get("https://www.basketball-reference.com/players/a/{}/gamelog/{}/".format(id, year)).text
+        soup_game = BeautifulSoup(url_data, "lxml")
 
-            url_data = requests.get("https://www.basketball-reference.com/players/a/{}/gamelog/{}/".format(id, year)).text
-            soup_game = BeautifulSoup(url_data, "lxml")
+        rows = soup_game.findAll("tr", id=lambda x: x and x.startswith("pgl_basic"))
+        player_stats = [[td.getText() for td in rows[i].findAll("td")] for i in range(len(rows))]
+        df_i = pd.DataFrame(columns=header)
 
-            rows = soup_game.findAll("tr", id=lambda x: x and x.startswith("pgl_basic"))
-            player_stats = [[td.getText() for td in rows[i].findAll("td")] for i in range(len(rows))]
-            df_i = pd.DataFrame(columns=header)
+        for lista in player_stats:
+            lista.pop(4)
+            lista.pop(5)
+            lista.insert(0, id)
+            stats_df = pd.DataFrame(lista).T
+            stats_df.columns = header
+            df_i = df_i.append(stats_df)
 
-            for lista in player_stats:
-                lista.pop(4)
-                lista.pop(5)
-                lista.insert(0, id)
-                stats_df = pd.DataFrame(lista).T
-                stats_df.columns = header
-                df_i = df_i.append(stats_df)
+        game_data_df = game_data_df.append(df_i)
+        print("id {}/{} done, ID = {}".format(iter, len(ids_df), id))
+        iter += 1
 
-            game_data_df = game_data_df.append(df_i)
-            print("id {}/{} succesful, ID = {}".format(iter, len(ids_df), id))
-            iter += 1
-
-        except:
-            print("error with id {}/{}, ID = {}".format(iter, len(ids_df), id))
-            iter += 1
-
+    game_data_df = game_data_df.rename(str.lower())
     return game_data_df
 
 
