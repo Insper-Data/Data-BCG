@@ -15,10 +15,13 @@ def convert_string(string):
 agencies_data = pd.read_csv("https://raw.githubusercontent.com/jacobkap/crimedatatool_helper/master/data/crosswalk.csv")
 agencies_data = (agencies_data >>
                  select(_.ori, _.fips_state_county_code) >>
-                 mutate(fips_state_county_code = [convert_string(n) for n in agencies_data.fips_state_county_code]))
+                 mutate(fips_state_county_code = [convert_string(n) for n in agencies_data.fips_state_county_code]) >>
+                 mutate(fips_state_county_code = _.fips_state_county_code.astype(str)))
+
 fips_data = pd.read_csv("https://raw.githubusercontent.com/Insper-Data/Data_BCG/master/Download_Data/Data/fips_data.csv")
 fips_data = (fips_data >>
-             select(_.county_fips, _.metfips))
+             select(_.county_fips, _.metfips) >>
+             mutate(county_fips = _.county_fips.astype(str)))
 
 ######## Getting File Directory
 def get_filepath(message):
