@@ -47,10 +47,6 @@ def clean_arrests_process():
         filename = db.YEAR.iloc[0]
         db.to_csv(os.path.join(db_path, str(filename) + ".csv"))
 
-df = df.merge(agencies_data, how="inner", left_on="ORI", right_on="ori")
-df = df.merge(fips_data, how="inner", left_on="fips_state_county_code", right_on="county_fips")
-df = df.drop(columns=["ORI", "ori", "fips_state_county_code", "county_fips"])
-
 def clean_arrests_joinagencies():
     db_path = get_filepath("Selecione a pasta que contém as bases desejadas")
     files = [file for file in os.listdir(db_path) if re.match(".*csv$", file)]
@@ -69,7 +65,6 @@ def clean_arrests_joinagencies():
 
         os.remove(file_wd)
         db.to_csv(file_wd)
-
 
 def clean_arrests_joinfips():
     db_path = get_filepath("Selecione a pasta que contém as bases desejadas")
