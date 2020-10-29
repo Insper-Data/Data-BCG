@@ -72,5 +72,3 @@ df_final_game.to_csv("cleaned_data/nba_cleaned_game_2000.csv")
 
 # Created a database with less columns for a less noisy visualization
 performance_aggr_gmsc = performance_aggr[["year", "player", "gmsc", "birthplace", "state", "hs_city"]]
-
-
