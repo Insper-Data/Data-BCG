@@ -56,7 +56,7 @@ def clean_arrests_joinagencies():
 
         file_wd = os.path.join(db_path, pasta)
 
-        data = pd.read_stata(file_wd, chunksize=100000)
+        data = pd.read_csv(file_wd, chunksize=100000)
 
         db = pd.DataFrame()
 
@@ -75,7 +75,7 @@ def clean_arrests_joinfips():
 
         file_wd = os.path.join(db_path, pasta)
 
-        data = pd.read_stata(file_wd, chunksize=100000)
+        data = pd.read_csv(file_wd, chunksize=100000)
 
         db = pd.DataFrame()
 
@@ -94,7 +94,7 @@ def clean_arrests_finishdrop():
 
         file_wd = os.path.join(db_path, pasta)
 
-        data = pd.read_stata(file_wd, chunksize=100000)
+        data = pd.read_csv(file_wd, chunksize=100000)
 
         db = pd.DataFrame()
 
