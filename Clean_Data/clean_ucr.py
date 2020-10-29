@@ -86,7 +86,12 @@ def clean_arrests_joinfips():
 
         db = pd.DataFrame()
 
+        i = 1
+
         for df in data:
+
+            print("Oi, eu sou o chunk {} e eu estou rodando".format(i))
+            i += 1
             df = df.drop(columns=["ORI", "ori"])
             db = db.append(pd.merge(df, fips_data, how="inner", left_on="fips_state_county_code", right_on="county_fips"))
 
