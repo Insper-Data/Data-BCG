@@ -2,7 +2,7 @@ import requests
 import pandas as pd
 import countries_and_states
 from bs4 import BeautifulSoup
-
+import re
 
 def get_players_id():
 
@@ -42,16 +42,42 @@ def get_season_data(year):
 def get_game_data(year):
 
     ids_df = get_players_id()
+    game_data_df = pd.DataFrame()
+
+    url_header = requests.get("https://www.basketball-reference.com/players/a/{}/gamelog/{}/".format("beshode01", 1980)).text
+    soup_header = BeautifulSoup(url_header, "lxml")
+    header = [th.get_text() for th in soup_header.findAll("tr")]
+    header = header[9].split("\n")
+    header.pop(0)
+    header.pop(0)
+    header.pop(4)
+    header.pop(5)
+    header.pop(26)
 
     for id in ids_df["id"]:
-        url_data = requests.get("https://www.basketball-reference.com/players/a/{}}/gamelog/{}}/".format(id, year)).text
 
+        try:
 
+            url_data = requests.get("https://www.basketball-reference.com/players/a/{}/gamelog/{}/".format(id, year)).text
+            soup_game = BeautifulSoup(url_data, "lxml")
 
+            rows = soup_game.findAll("tr", id=lambda x: x and x.startswith('pgl_basic'))
+            player_stats = [[td.getText() for td in rows[i].findAll("td")] for i in range(len(rows))][0]
+            player_stats.pop(4)
+            player_stats.pop(5)
+            stats_df = pd.DataFrame(player_stats).T
+            stats_df.columns = header
 
+            df_i = pd.DataFrame(columns=header)
+            df_i = df_i.append(stats_df)
 
+            game_data_df = game_data_df.append(df_i)
+            print("id {} succesful".format(id))
 
+        except:
+            print("error with id {}".format(id))
 
+    return game_data_df
 
 
 def get_birthplaces(all_countries=True):
