@@ -5,15 +5,20 @@ from siuba import *
 import re
 import pandas as pd
 
+def convert_string(string):
+    try:
+        x = int(string)
+    except:
+        return pd.NA
+    return x
+
 agencies_data = pd.read_csv("https://raw.githubusercontent.com/jacobkap/crimedatatool_helper/master/data/crosswalk.csv")
 agencies_data = (agencies_data >>
                  select(_.ori, _.fips_state_county_code) >>
-                 mutate(fips_state_county_code = _.fips_state_county_code.astype(int)))
+                 mutate(fips_state_county_code = [convert_string(n) for n in agencies_data.fips_state_county_code]))
 fips_data = pd.read_csv("https://raw.githubusercontent.com/Insper-Data/Data_BCG/master/Download_Data/Data/fips_data.csv")
 fips_data = (fips_data >>
-             select(_.county_fips, _.metfips) >>
-             mutate(county_fips = _.county_fips.astype(int),
-                    metfips = _.metfips.astype(int)))
+             select(_.county_fips, _.metfips))
 
 ######## Getting File Directory
 def get_filepath(message):
