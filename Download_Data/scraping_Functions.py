@@ -48,7 +48,7 @@ def get_game_data(year):
     url_header = requests.get("https://www.basketball-reference.com/players/a/{}/gamelog/{}/".format("beshode01", year)).text
     soup_header = BeautifulSoup(url_header, "lxml")
     header = [th.get_text() for th in soup_header.findAll("tr")]
-    header = header[9].split("\n")
+    header = [string for string in header if "Rk" in string][0].split("\n")
     header.pop(0)
     header.pop(0)
     header.pop(4)

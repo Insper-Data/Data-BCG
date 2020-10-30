@@ -11,8 +11,8 @@ import scraping_Functions as sf
 
 # Pulling the data scraping functions
 
-performance = sf.get_aggregated_season_data(2014)
-per_game_data = sf.get_game_data(2010)
+performance = sf.get_aggregated_season_data(1980)
+per_game_data = sf.get_game_data(2014)
 birthplaces = sf.get_birthplaces()
 high_schools = sf.get_high_school_cities()
 player_id = sf.get_players_id()
