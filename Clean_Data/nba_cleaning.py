@@ -25,6 +25,9 @@ performance.player = performance.player.str.replace("\*", "")
 
 player_id = player_id.rename(str.lower, axis = "columns")
 per_game_data = pd.merge(per_game_data, player_id, how="left", on="id")
+names = per_game_data["Player"]
+per_game_data.drop("player", axis=1, inplace=True)
+per_game_data.insert(0, "player", names)
 
 # Eliminated columns that weren't useful to the final database
 high_schools = high_schools.iloc[:, [0, 1, 2]].rename(str.lower, axis = "columns")
