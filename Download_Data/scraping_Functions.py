@@ -45,7 +45,7 @@ def get_game_data(year):
     game_data_df = pd.DataFrame()
     iter = 1
 
-    url_header = requests.get("https://www.basketball-reference.com/players/a/{}/gamelog/{}/".format("beshode01", 1980)).text
+    url_header = requests.get("https://www.basketball-reference.com/players/a/{}/gamelog/{}/".format("beshode01", year)).text
     soup_header = BeautifulSoup(url_header, "lxml")
     header = [th.get_text() for th in soup_header.findAll("tr")]
     header = header[9].split("\n")
