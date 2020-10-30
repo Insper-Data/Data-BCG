@@ -25,7 +25,7 @@ performance.player = performance.player.str.replace("\*", "")
 
 player_id = player_id.rename(str.lower, axis = "columns")
 per_game_data = pd.merge(per_game_data, player_id, how="left", on="id")
-names = per_game_data["Player"]
+names = per_game_data["player"]
 per_game_data.drop("player", axis=1, inplace=True)
 per_game_data.insert(0, "player", names)
 
@@ -56,9 +56,6 @@ df_final_season.sort_values(["metfips"], inplace=True)
 df_final_game = pd.merge(per_game_aggr, df_fips, how="left", left_on=["state", "birthplace"], right_on=["state_id", "city_ascii"])
 df_final_game.drop(["state_id", "city_ascii"], inplace=True, axis=1)
 df_final_game.sort_values(["metfips"], inplace=True)
-name = df_final_game["player"]
-df_final_game.drop("player", inplace=True)
-df_final_game.insert(0, "player", name)
 
 
 # Checking Na percentage
