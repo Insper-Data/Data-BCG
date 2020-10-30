@@ -22,6 +22,9 @@ player_id = sf.get_players_id()
 # I removed the * at the end of the name of the players from every player
 
 performance.player = performance.player.str.replace("\*", "")
+
+player_id = player_id.rename(str.lower, axis = "columns")
+per_game_data = pd.merge(per_game_data, player_id, how="left", on="player")
 per_game_data = per_game_data.player.str.replace("\*", "")
 
 # Eliminated columns that weren't useful to the final database
