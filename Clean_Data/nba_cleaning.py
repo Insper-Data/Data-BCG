@@ -22,7 +22,7 @@ player_id = sf.get_players_id()
 # I removed the * at the end of the name of the players from every player
 
 performance.player = performance.player.str.replace("\*", "")
-per_game_data = performance.player.str.replace("\*", "")
+per_game_data = per_game_data.player.str.replace("\*", "")
 
 # Eliminated columns that weren't useful to the final database
 high_schools = high_schools.iloc[:, [0, 1, 2]].rename(str.lower, axis = "columns")
