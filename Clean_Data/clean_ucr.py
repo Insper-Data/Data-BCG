@@ -45,7 +45,7 @@ def clean_arrests_process():
 
             df = (df >>
              select(_["ORI", "YEAR", "SUB",
-                   "OFFENSE":"JN", "ZERO"]) >>
+                   "OFFENSE":"JN", "ZERO", "DTPRUP1"]) >>
              filter(_.ZERO == "Not used") >>
              select(-_.ZERO))
 
@@ -58,10 +58,10 @@ def clean_arrests_joinagencies():
     db_path = get_filepath("Selecione a pasta que contém as bases desejadas")
     files = [file for file in os.listdir(db_path) if re.match(".*csv$", file)]
 
-    for pasta in files:
-        print("Carregando pasta " + pasta)
+    for file in files:
+        print("Carregando pasta " + file)
 
-        file_wd = os.path.join(db_path, pasta)
+        file_wd = os.path.join(db_path, file)
 
         data = pd.read_csv(file_wd, chunksize=100000)
 
@@ -85,13 +85,8 @@ def clean_arrests_joinfips():
         data = pd.read_csv(file_wd, chunksize=100000)
 
         db = pd.DataFrame()
-
-        i = 1
-
+        
         for df in data:
-
-            print("Oi, eu sou o chunk {} e eu estou rodando".format(i))
-            i += 1
             df = df.drop(columns=["ORI", "ori"])
             db = db.append(pd.merge(df, fips_data, how="inner", left_on="fips_state_county_code", right_on="county_fips"))
 
