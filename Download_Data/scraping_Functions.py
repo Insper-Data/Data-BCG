@@ -2,7 +2,7 @@ import requests
 import pandas as pd
 import countries_and_states
 from bs4 import BeautifulSoup
-import re
+
 
 def get_players_id():
 
@@ -170,4 +170,4 @@ def get_aggregated_season_data(initial_year=2010, final_year=2020):
 
         seasons_data = seasons_data.append(df)
 
-    return seasons_data.rename(str.lower, axis = "columns")
+    return seasons_data.rename(str.lower, axis="columns")
