@@ -12,7 +12,7 @@ import scraping_Functions as sf
 # Pulling the data scraping functions
 
 performance = sf.get_aggregated_season_data(1980)
-per_game_data = sf.get_game_data(2014)
+per_game_data = sf.get_game_data(2015)
 birthplaces = sf.get_birthplaces()
 high_schools = sf.get_high_school_cities()
 player_id = sf.get_players_id()
@@ -70,7 +70,7 @@ df_nas = df_nas["birthplace"].unique()
 
 # Saving dataframe
 df_final_season.to_csv("cleaned_data/nba_cleaned_season.csv")
-df_final_game.to_csv("cleaned_data/nba_cleaned_game_2014.csv")
+df_final_game.to_csv("cleaned_data/nba_cleaned_game_2015.csv")
 
 # Created a database with less columns for a less noisy visualization
 performance_aggr_gmsc = performance_aggr[["year", "player", "gmsc", "birthplace", "state", "hs_city"]]
