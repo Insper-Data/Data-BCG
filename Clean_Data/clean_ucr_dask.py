@@ -45,7 +45,7 @@ for year in years:
     df = dd.read_csv("raw_data/{}.csv".format(year), assume_missing=True, dtype=object)
 
     # Clean Arrests
-    df = df[["ORI", "YEAR", "SUB", "OFFENSE", "OCCUR", "M0_9", "M10_12", "M13_14", "M15", "M16",
+    df = df[["ORI", "YEAR", "SUB", "OFFENSE", "MONTH", "OCCUR", "M0_9", "M10_12", "M13_14", "M15", "M16",
              "M17", "M18", "M19", "M20", "M21", "M22", "M23", "M24", "M25_29", "M30_34", "M35_39", "M40_44",
              "M45_49", "M50_54", "M55_59", "M60_64", "M65", "F0_9", "F10_12", "F13_14", "F15", "F16",
              "F17", "F18", "F19", "F20", "F21", "F22", "F23", "F24", "F25_29", "F30_34", "F35_39", "F40_44",

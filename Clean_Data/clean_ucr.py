@@ -45,7 +45,7 @@ def clean_arrests_process():
 
             df = (df >>
              select(_["ORI", "YEAR", "SUB",
-                   "OFFENSE":"JN", "ZERO", "DTPRUP1"]) >>
+                   "OFFENSE":"JN", "ZERO", "MONTH"]) >>
              filter(_.ZERO == "Not used") >>
              select(-_.ZERO))
 
