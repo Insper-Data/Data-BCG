@@ -27,7 +27,7 @@ def get_players_id():
 def get_season_data(year):
 
     url_data = requests.get("https://www.basketball-reference.com/leagues/NBA_{}_per_game.html".format(year)).text
-    soup_season= BeautifulSoup(url_data, "lxml")
+    soup_season = BeautifulSoup(url_data, "lxml")
     header = [th.get_text() for th in soup_season.findAll("tr")[0].findAll("th")]
     header = header[1:]
     rows = soup_season.findAll("tr")[1:]
@@ -42,16 +42,43 @@ def get_season_data(year):
 def get_game_data(year):
 
     ids_df = get_players_id()
+    game_data_df = pd.DataFrame()
+    iter = 1
+
+    url_header = requests.get("https://www.basketball-reference.com/players/a/{}/gamelog/{}/".format("acyqu01", 2014)).text
+    soup_header = BeautifulSoup(url_header, "lxml")
+    header = [th.get_text() for th in soup_header.findAll("tr")]
+    header = [string for string in header if "Rk" in string][0].split("\n")
+    header.pop(0)
+    header.pop(0)
+    header.pop(4)
+    header.pop(5)
+    header.pop(26)
+    header.insert(0, "id")
 
     for id in ids_df["id"]:
-        url_data = requests.get("https://www.basketball-reference.com/players/a/{}}/gamelog/{}}/".format(id, year)).text
 
+        url_data = requests.get("https://www.basketball-reference.com/players/a/{}/gamelog/{}/".format(id, year)).text
+        soup_game = BeautifulSoup(url_data, "lxml")
 
+        rows = soup_game.findAll("tr", id=lambda x: x and x.startswith("pgl_basic"))
+        player_stats = [[td.getText() for td in rows[i].findAll("td")] for i in range(len(rows))]
+        df_i = pd.DataFrame(columns=header)
 
+        for lista in player_stats:
+            lista.pop(4)
+            lista.pop(5)
+            lista.insert(0, id)
+            stats_df = pd.DataFrame(lista).T
+            stats_df.columns = header
+            df_i = df_i.append(stats_df)
 
+        game_data_df = game_data_df.append(df_i)
+        print("id {}/{} done, ID = {}".format(iter, len(ids_df), id))
+        iter += 1
 
-
-
+    game_data_df = game_data_df.rename(str.lower, axis = "columns")
+    return game_data_df
 
 
 def get_birthplaces(all_countries=True):
@@ -143,4 +170,4 @@ def get_aggregated_season_data(initial_year=2010, final_year=2020):
 
         seasons_data = seasons_data.append(df)
 
-    return seasons_data.rename(str.lower, axis = "columns")
+    return seasons_data.rename(str.lower, axis="columns")
