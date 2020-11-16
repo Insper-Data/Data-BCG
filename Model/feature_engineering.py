@@ -50,21 +50,21 @@ nba["YEAR"] = nba.date.apply(lambda x: datetime.strptime(x, "%Y-%m-%d").year)
 
 nba["norm_pts"] = preprocessing.scale(nba["pts"])
 
-nba["point_rolling3_avg"] = nba.groupby(["id"]).pts.transform(lambda x: x.rolling(3, min_periods=2).mean())
-nba["point_rolling6_avg"] = nba.groupby(["id"]).pts.transform(lambda x: x.rolling(6, min_periods=2).mean())
-nba["point_rolling9_avg"] = nba.groupby(["id"]).pts.transform(lambda x: x.rolling(9, min_periods=2).mean())
+nba["lag_point_rolling3_avg"] = nba.groupby(["id"]).pts.shift().transform(lambda x: x.rolling(3, min_periods=2).mean())
+nba["lag_point_rolling6_avg"] = nba.groupby(["id"]).pts.shift().transform(lambda x: x.rolling(6, min_periods=2).mean())
+nba["lag_point_rolling9_avg"] = nba.groupby(["id"]).pts.shift().transform(lambda x: x.rolling(9, min_periods=2).mean())
 
-nba["point_rolling3_max"] = nba.groupby(["id"]).pts.transform(lambda x: x.rolling(3, min_periods=2).max())
-nba["point_rolling6_max"] = nba.groupby(["id"]).pts.transform(lambda x: x.rolling(6, min_periods=2).max())
-nba["point_rolling9_max"] = nba.groupby(["id"]).pts.transform(lambda x: x.rolling(9, min_periods=2).max())
+nba["lag_point_rolling3_max"] = nba.groupby(["id"]).pts.shift().transform(lambda x: x.rolling(3, min_periods=2).max())
+nba["lag_point_rolling6_max"] = nba.groupby(["id"]).pts.shift().transform(lambda x: x.rolling(6, min_periods=2).max())
+nba["lag_point_rolling9_max"] = nba.groupby(["id"]).pts.shift().transform(lambda x: x.rolling(9, min_periods=2).max())
 
-nba["point_rolling3_min"] = nba.groupby(["id"]).pts.transform(lambda x: x.rolling(3, min_periods=2).min())
-nba["point_rolling6_min"] = nba.groupby(["id"]).pts.transform(lambda x: x.rolling(6, min_periods=2).min())
-nba["point_rolling9_min"] = nba.groupby(["id"]).pts.transform(lambda x: x.rolling(9, min_periods=2).min())
+nba["lag_point_rolling3_min"] = nba.groupby(["id"]).pts.shift().transform(lambda x: x.rolling(3, min_periods=2).min())
+nba["lag_point_rolling6_min"] = nba.groupby(["id"]).pts.shift().transform(lambda x: x.rolling(6, min_periods=2).min())
+nba["lag_point_rolling9_min"] = nba.groupby(["id"]).pts.shift().transform(lambda x: x.rolling(9, min_periods=2).min())
 
-nba["point_rolling3_std"] = nba.groupby(["id"]).pts.transform(lambda x: x.rolling(3, min_periods=2).std())
-nba["point_rolling6_std"] = nba.groupby(["id"]).pts.transform(lambda x: x.rolling(6, min_periods=2).std())
-nba["point_rolling9_std"] = nba.groupby(["id"]).pts.transform(lambda x: x.rolling(9, min_periods=2).std())
+nba["lag_point_rolling3_std"] = nba.groupby(["id"]).pts.shift().transform(lambda x: x.rolling(3, min_periods=2).std())
+nba["lag_point_rolling6_std"] = nba.groupby(["id"]).pts.shift().transform(lambda x: x.rolling(6, min_periods=2).std())
+nba["lag_point_rolling9_std"] = nba.groupby(["id"]).pts.shift().transform(lambda x: x.rolling(9, min_periods=2).std())
 
 # gmsc
 
