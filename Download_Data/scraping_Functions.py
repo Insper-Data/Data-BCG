@@ -77,7 +77,7 @@ def get_game_data(year):
         print("id {}/{} done, ID = {}".format(iter, len(ids_df), id))
         iter += 1
 
-    game_data_df = game_data_df.rename(str.lower, axis = "columns")
+    game_data_df = game_data_df.rename(str.lower, axis="columns")
     return game_data_df
 
 
