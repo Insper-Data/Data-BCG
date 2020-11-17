@@ -20,7 +20,7 @@ fips_data = pd.read_csv("https://raw.githubusercontent.com/Insper-Data/Data_BCG/
 # Creating geographic infos dataframe
 agencies_data = agencies_data.drop_duplicates(subset="fips_state_county_code")
 agencies_data = agencies_data[~agencies_data["fips_state_county_code"].str.contains("20NA")]
-agencies_data["fips_state_county_code"] = agencies_datxa["fips_state_county_code"].astype(int)
+agencies_data["fips_state_county_code"] = agencies_data["fips_state_county_code"].astype(int)
 
 fips_data = fips_data.drop_duplicates(subset="county_fips")
 
