@@ -1,12 +1,5 @@
 import pandas as pd
-import os
-import sys
-
-cwd = os.getcwd()
-project_wd = os.path.dirname(cwd)
-download_wd = os.path.join(project_wd, "Download_Data")
-sys.path.insert(1, download_wd)
-
+c
 import scraping_Functions as sf
 
 # Pulling the data scraping functions
