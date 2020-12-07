@@ -234,4 +234,10 @@ df["max_nfathers_year"] = df.groupby(["METFIPS", "year"]).NFATHERS.transform("ma
 df["min_nfathers_year"] = df.groupby(["METFIPS", "year"]).NFATHERS.transform("min")
 df["median_nfathers_year"] = df.groupby(["METFIPS", "year"]).NFATHERS.transform("median")
 
+id_df = pd.DataFrame([(x, y) for x in list(set(df.YEAR)) for y in list(set(df.g))],
+                     columns = ["YEAR", "g"])
+id_df["game_id"] = np.array(range(len(id_df))) + 1
+
+df = df.merge(id_df, how = "inner", on = ["YEAR", "g"])
+
 df.to_csv("pre_model_data/df_2009_2015_feat_engineered.csv")
