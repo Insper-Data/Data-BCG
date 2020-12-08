@@ -33,76 +33,81 @@ df = pd.read_csv("{}/cleaned_data/df_prepoc_2009_2015.csv".format(clean_wd))
 # Renaming columns
 df.drop(["Unnamed: 0", "Unnamed: 29", "metfips_x", "metfips_y", "YEAR_x", "YEAR_y"], axis=1, inplace=True)
 
+# Sorting dataframe by player and date
+df = df.sort_values(["player", "date"])
+
 ## creating variables from df arrest variables
 df["norm_arrests"] = preprocessing.scale(df["OCCUR"])
-df["mean_arrests_year"] = df.groupby(["METFIPS", "year"]).OCCUR.transform("mean")
-df["std_arrests_year"] = df.groupby(["METFIPS", "year"]).OCCUR.transform("std")
-df["max_arrests_year"] = df.groupby(["METFIPS", "year"]).OCCUR.transform("max")
-df["min_arrests_year"] = df.groupby(["METFIPS", "year"]).OCCUR.transform("min")
-df["median_arrests_year"] = df.groupby(["METFIPS", "year"]).OCCUR.transform("median")
+df["norm_arrests_lag"] = df.groupby(["METFIPS"]).norm_arrests.shift()
 
-df["rolling_avg3_arrests"] = df.groupby(["METFIPS"]).OCCUR.transform(lambda x: x.rolling(3, min_periods=2).mean())
-df["rolling_avg6_arrests"] = df.groupby(["METFIPS"]).OCCUR.transform(lambda x: x.rolling(6, min_periods=2).mean())
-df["rolling_avg9_arrests"] = df.groupby(["METFIPS"]).OCCUR.transform(lambda x: x.rolling(9, min_periods=2).mean())
-df["rolling_std3_arrests"] = df.groupby(["METFIPS"]).OCCUR.transform(lambda x: x.rolling(3, min_periods=2).std())
-df["rolling_std6_arrests"] = df.groupby(["METFIPS"]).OCCUR.transform(lambda x: x.rolling(6, min_periods=2).std())
-df["rolling_std9_arrests"] = df.groupby(["METFIPS"]).OCCUR.transform(lambda x: x.rolling(9, min_periods=2).std())
+df["lag_rolling_avg3_arrests"] = df.groupby(["METFIPS"]).norm_arrests_lag.transform(lambda x: x.rolling(3, min_periods=2).mean())
+df["lag_rolling_avg6_arrests"] = df.groupby(["METFIPS"]).norm_arrests_lag.transform(lambda x: x.rolling(6, min_periods=2).mean())
+df["lag_rolling_avg9_arrests"] = df.groupby(["METFIPS"]).norm_arrests_lag.transform(lambda x: x.rolling(9, min_periods=2).mean())
+df["lag_rolling_std3_arrests"] = df.groupby(["METFIPS"]).norm_arrests_lag.transform(lambda x: x.rolling(3, min_periods=2).std())
+df["lag_rolling_std6_arrests"] = df.groupby(["METFIPS"]).norm_arrests_lag.transform(lambda x: x.rolling(6, min_periods=2).std())
+df["lag_rolling_std9_arrests"] = df.groupby(["METFIPS"]).norm_arrests_lag.transform(lambda x: x.rolling(9, min_periods=2).std())
 
 ## creating variables from nba variables
 # points
 df["norm_pts"] = preprocessing.scale(df["pts"])
+df["norm_gmsc"] = preprocessing.scale(df["gmsc"])
 
-df["lag_point_rolling3_avg"] = df.groupby(["id"]).pts.shift().transform(lambda x: x.rolling(3, min_periods=2).mean())
-df["lag_point_rolling6_avg"] = df.groupby(["id"]).pts.shift().transform(lambda x: x.rolling(6, min_periods=2).mean())
-df["lag_point_rolling9_avg"] = df.groupby(["id"]).pts.shift().transform(lambda x: x.rolling(9, min_periods=2).mean())
+df["norm_pts_lag"] = df.groupby(["id"]).pts.shift()
+df["norm_gmsc_lag"] = df.groupby(["id"]).norm_gmsc.shift()
+df["won_last"] = df.groupby(["id"]).gs.shift()
 
-df["lag_point_rolling3_max"] = df.groupby(["id"]).pts.shift().transform(lambda x: x.rolling(3, min_periods=2).max())
-df["lag_point_rolling6_max"] = df.groupby(["id"]).pts.shift().transform(lambda x: x.rolling(6, min_periods=2).max())
-df["lag_point_rolling9_max"] = df.groupby(["id"]).pts.shift().transform(lambda x: x.rolling(9, min_periods=2).max())
+df["lag_point_rolling3_avg"] = df.groupby(["id"]).norm_pts_lag.transform(lambda x: x.rolling(3, min_periods=2).mean())
+df["lag_point_rolling6_avg"] = df.groupby(["id"]).norm_pts_lag.transform(lambda x: x.rolling(6, min_periods=2).mean())
+df["lag_point_rolling9_avg"] = df.groupby(["id"]).norm_pts_lag.transform(lambda x: x.rolling(9, min_periods=2).mean())
 
-df["lag_point_rolling3_min"] = df.groupby(["id"]).pts.shift().transform(lambda x: x.rolling(3, min_periods=2).min())
-df["lag_point_rolling6_min"] = df.groupby(["id"]).pts.shift().transform(lambda x: x.rolling(6, min_periods=2).min())
-df["lag_point_rolling9_min"] = df.groupby(["id"]).pts.shift().transform(lambda x: x.rolling(9, min_periods=2).min())
+df["lag_point_rolling3_max"] = df.groupby(["id"]).norm_pts_lag.transform(lambda x: x.rolling(3, min_periods=2).max())
+df["lag_point_rolling6_max"] = df.groupby(["id"]).norm_pts_lag.transform(lambda x: x.rolling(6, min_periods=2).max())
+df["lag_point_rolling9_max"] = df.groupby(["id"]).norm_pts_lag.transform(lambda x: x.rolling(9, min_periods=2).max())
 
-df["lag_point_rolling3_std"] = df.groupby(["id"]).pts.shift().transform(lambda x: x.rolling(3, min_periods=2).std())
-df["lag_point_rolling6_std"] = df.groupby(["id"]).pts.shift().transform(lambda x: x.rolling(6, min_periods=2).std())
-df["lag_point_rolling9_std"] = df.groupby(["id"]).pts.shift().transform(lambda x: x.rolling(9, min_periods=2).std())
+df["lag_point_rolling3_min"] = df.groupby(["id"]).norm_pts_lag.transform(lambda x: x.rolling(3, min_periods=2).min())
+df["lag_point_rolling6_min"] = df.groupby(["id"]).norm_pts_lag.transform(lambda x: x.rolling(6, min_periods=2).min())
+df["lag_point_rolling9_min"] = df.groupby(["id"]).norm_pts_lag.transform(lambda x: x.rolling(9, min_periods=2).min())
+
+df["lag_point_rolling3_std"] = df.groupby(["id"]).norm_pts_lag.transform(lambda x: x.rolling(3, min_periods=2).std())
+df["lag_point_rolling6_std"] = df.groupby(["id"]).norm_pts_lag.transform(lambda x: x.rolling(6, min_periods=2).std())
+df["lag_point_rolling9_std"] = df.groupby(["id"]).norm_pts_lag.transform(lambda x: x.rolling(9, min_periods=2).std())
 
 # gmsc
-df["lag_gmsc_rolling3_avg"] = df.groupby(["id"]).gmsc.shift().transform(lambda x: x.rolling(3, min_periods=2).mean())
-df["lag_gmsc_rolling6_avg"] = df.groupby(["id"]).gmsc.shift().transform(lambda x: x.rolling(6, min_periods=2).mean())
-df["lag_gmsc_rolling9_avg"] = df.groupby(["id"]).gmsc.shift().transform(lambda x: x.rolling(9, min_periods=2).mean())
+df["lag_gmsc_rolling3_avg"] = df.groupby(["id"]).norm_gmsc_lag.transform(lambda x: x.rolling(3, min_periods=2).mean())
+df["lag_gmsc_rolling6_avg"] = df.groupby(["id"]).norm_gmsc_lag.transform(lambda x: x.rolling(6, min_periods=2).mean())
+df["lag_gmsc_rolling9_avg"] = df.groupby(["id"]).norm_gmsc_lag.transform(lambda x: x.rolling(9, min_periods=2).mean())
 
-df["lag_gmsc_rolling3_max"] = df.groupby(["id"]).gmsc.shift().transform(lambda x: x.rolling(3, min_periods=2).max())
-df["lag_gmsc_rolling6_max"] = df.groupby(["id"]).gmsc.shift().transform(lambda x: x.rolling(6, min_periods=2).max())
-df["lag_gmsc_rolling9_max"] = df.groupby(["id"]).gmsc.shift().transform(lambda x: x.rolling(9, min_periods=2).max())
+df["lag_gmsc_rolling3_max"] = df.groupby(["id"]).norm_gmsc_lag.transform(lambda x: x.rolling(3, min_periods=2).max())
+df["lag_gmsc_rolling6_max"] = df.groupby(["id"]).norm_gmsc_lag.transform(lambda x: x.rolling(6, min_periods=2).max())
+df["lag_gmsc_rolling9_max"] = df.groupby(["id"]).norm_gmsc_lag.transform(lambda x: x.rolling(9, min_periods=2).max())
 
-df["lag_gmsc_rolling3_min"] = df.groupby(["id"]).gmsc.shift().transform(lambda x: x.rolling(3, min_periods=2).min())
-df["lag_gmsc_rolling6_min"] = df.groupby(["id"]).gmsc.shift().transform(lambda x: x.rolling(6, min_periods=2).min())
-df["lag_gmsc_rolling9_min"] = df.groupby(["id"]).gmsc.shift().transform(lambda x: x.rolling(9, min_periods=2).min())
+df["lag_gmsc_rolling3_min"] = df.groupby(["id"]).norm_gmsc_lag.transform(lambda x: x.rolling(3, min_periods=2).min())
+df["lag_gmsc_rolling6_min"] = df.groupby(["id"]).norm_gmsc_lag.transform(lambda x: x.rolling(6, min_periods=2).min())
+df["lag_gmsc_rolling9_min"] = df.groupby(["id"]).norm_gmsc_lag.transform(lambda x: x.rolling(9, min_periods=2).min())
 
-df["lag_gmsc_rolling3_std"] = df.groupby(["id"]).gmsc.shift().transform(lambda x: x.rolling(3, min_periods=2).std())
-df["lag_gmsc_rolling6_std"] = df.groupby(["id"]).gmsc.shift().transform(lambda x: x.rolling(6, min_periods=2).std())
-df["lag_gmsc_rolling9_std"] = df.groupby(["id"]).gmsc.shift().transform(lambda x: x.rolling(9, min_periods=2).std())
+df["lag_gmsc_rolling3_std"] = df.groupby(["id"]).norm_gmsc_lag.transform(lambda x: x.rolling(3, min_periods=2).std())
+df["lag_gmsc_rolling6_std"] = df.groupby(["id"]).norm_gmsc_lag.transform(lambda x: x.rolling(6, min_periods=2).std())
+df["lag_gmsc_rolling9_std"] = df.groupby(["id"]).norm_gmsc_lag.transform(lambda x: x.rolling(9, min_periods=2).std())
 
 # Time played
 df["seconds_played"] = df.mp.apply(lambda x: min_to_sec(x))
+df["seconds_played_lag"] = df.groupby(["id"]).seconds_played.shift()
 
-df["lag_time_played_rolling3_avg"] = df.groupby(["id"]).seconds_played.shift().transform(lambda x: x.rolling(3, min_periods=2).mean())
-df["lag_time_played_rolling6_avg"] = df.groupby(["id"]).seconds_played.shift().transform(lambda x: x.rolling(6, min_periods=2).mean())
-df["lag_time_played_rolling9_avg"] = df.groupby(["id"]).seconds_played.shift().transform(lambda x: x.rolling(9, min_periods=2).mean())
+df["lag_time_played_rolling3_avg"] = df.groupby(["id"]).seconds_played_lag.transform(lambda x: x.rolling(3, min_periods=2).mean())
+df["lag_time_played_rolling6_avg"] = df.groupby(["id"]).seconds_played_lag.transform(lambda x: x.rolling(6, min_periods=2).mean())
+df["lag_time_played_rolling9_avg"] = df.groupby(["id"]).seconds_played_lag.transform(lambda x: x.rolling(9, min_periods=2).mean())
 
-df["lag_time_played_rolling3_max"] = df.groupby(["id"]).seconds_played.shift().transform(lambda x: x.rolling(3, min_periods=2).max())
-df["lag_time_played_rolling6_max"] = df.groupby(["id"]).seconds_played.shift().transform(lambda x: x.rolling(6, min_periods=2).max())
-df["lag_time_played_rolling9_max"] = df.groupby(["id"]).seconds_played.shift().transform(lambda x: x.rolling(9, min_periods=2).max())
+df["lag_time_played_rolling3_max"] = df.groupby(["id"]).seconds_played_lag.transform(lambda x: x.rolling(3, min_periods=2).max())
+df["lag_time_played_rolling6_max"] = df.groupby(["id"]).seconds_played_lag.transform(lambda x: x.rolling(6, min_periods=2).max())
+df["lag_time_played_rolling9_max"] = df.groupby(["id"]).seconds_played_lag.transform(lambda x: x.rolling(9, min_periods=2).max())
 
-df["lag_time_played_rolling3_min"] = df.groupby(["id"]).seconds_played.shift().transform(lambda x: x.rolling(3, min_periods=2).min())
-df["lag_time_played_rolling6_min"] = df.groupby(["id"]).seconds_played.shift().transform(lambda x: x.rolling(6, min_periods=2).min())
-df["lag_time_played_rolling9_min"] = df.groupby(["id"]).seconds_played.shift().transform(lambda x: x.rolling(9, min_periods=2).min())
+df["lag_time_played_rolling3_min"] = df.groupby(["id"]).seconds_played_lag.transform(lambda x: x.rolling(3, min_periods=2).min())
+df["lag_time_played_rolling6_min"] = df.groupby(["id"]).seconds_played_lag.transform(lambda x: x.rolling(6, min_periods=2).min())
+df["lag_time_played_rolling9_min"] = df.groupby(["id"]).seconds_played_lag.transform(lambda x: x.rolling(9, min_periods=2).min())
 
-df["lag_time_played_rolling3_std"] = df.groupby(["id"]).seconds_played.shift().transform(lambda x: x.rolling(3, min_periods=2).std())
-df["lag_time_played_rolling6_std"] = df.groupby(["id"]).seconds_played.shift().transform(lambda x: x.rolling(6, min_periods=2).std())
-df["lag_time_played_rolling9_std"] = df.groupby(["id"]).seconds_played.shift().transform(lambda x: x.rolling(9, min_periods=2).std())
+df["lag_time_played_rolling3_std"] = df.groupby(["id"]).seconds_played_lag.transform(lambda x: x.rolling(3, min_periods=2).std())
+df["lag_time_played_rolling6_std"] = df.groupby(["id"]).seconds_played_lag.transform(lambda x: x.rolling(6, min_periods=2).std())
+df["lag_time_played_rolling9_std"] = df.groupby(["id"]).seconds_played_lag.transform(lambda x: x.rolling(9, min_periods=2).std())
 
 # age
 df["age"] = df.age.apply(lambda x: int(x.split(sep="-")[0]))
@@ -162,4 +167,4 @@ id_df["game_id"] = np.array(range(len(id_df))) + 1
 
 df = df.merge(id_df, how = "inner", on = ["year", "g"])
 
-df.to_csv("pre_model_data/df_2009_2015_feat_engineered5.csv")
+df.to_csv("pre_model_data/df_2009_2015_feat_engineered6.csv")
