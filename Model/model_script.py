@@ -14,13 +14,13 @@ from sklearn.model_selection import cross_val_score
 import boruta
 
 # Function that identifies the database's filepath
-# def get_datapath(message):
-#     root = tk.Tk()
-#     root.withdraw()
-#     return filedialog.askopenfilename(title=message)
+def get_datapath(message):
+    root = tk.Tk()
+    root.withdraw()
+    return filedialog.askopenfilename(title=message)
 
 # Importing the database
-db = pd.read_csv("pre_model_data/df_2009_2015_feat_engineered5.csv")
+db = pd.read_csv("pre_model_data/df_2009_2015_feat_engineered3.csv")
 
 # Removing useless variables
 db = (db >>
@@ -28,45 +28,46 @@ db = (db >>
 
 # " + ".join(db.columns) # -> makes writing the formula easier
 
-y, X = patsy.dmatrices("gmsc ~ age + lag_point_rolling3_avg \
+y, X = patsy.dmatrices("gmsc ~ age + norm_pts_lag \
                         + won_last \
-                        + rolling_avg3_arrests \
-                        + rolling_std3_arrests + lag_time_played_lag", data=db)
+                        + norm_arrests_lag \
+                        + lag_rolling_avg3_arrests \
+                        + lag_rolling_std3_arrests + time_played_lag", data=db)
 
-# X_trn, X_tst, y_trn, y_tst = train_test_split(X, y, test_size=0.7, random_state=1234)
-#
-# # Random Forest Model
-#
-# ## Defining the Model
-# rf = RandomForestRegressor(n_estimators=500, random_state=1234, n_jobs=4)
-#
-# ## Fitting
-# rf.fit(X_trn, y_trn.ravel())
-#
-# ## Analyzing the model's performance
-# y_hat_rf = rf.predict(X_tst)
-# RMSE_rf = np.sqrt(mean_squared_error(y_hat_rf, y_tst))
-# np.round(RMSE_rf, 2)
-# r2_rf = r2_score(y_tst, y_hat_rf)
-# np.round(r2_rf, 2)
-#
-# explainer = shap.TreeExplainer(rf)
-# shap_values = explainer.shap_values(X_trn)
-#
-# #Boruta
-# feat_selector = BorutaPy(rf, n_estimators='auto', verbose=2, random_state=1)
-#
-# # find all relevant features - 5 features should be selected
-# feat_selector.fit(X, y.ravel())
-#
-# # check selected features - first 5 features are selected
-# feat_selector.support_
-#
-# # check ranking of features
-# feat_selector.ranking_
-#
-# # call transform() on X to filter it down to selected features
-# X_filtered = feat_selector.transform(X)
+X_trn, X_tst, y_trn, y_tst = train_test_split(X, y, test_size=0.7, random_state=1234)
+
+# Random Forest Model
+
+## Defining the Model
+rf = RandomForestRegressor(n_estimators=500, random_state=1234, n_jobs=4)
+
+## Fitting
+rf.fit(X_trn, y_trn.ravel())
+
+## Analyzing the model's performance
+y_hat_rf = rf.predict(X_tst)
+RMSE_rf = np.sqrt(mean_squared_error(y_hat_rf, y_tst))
+np.round(RMSE_rf, 2)
+r2_rf = r2_score(y_tst, y_hat_rf)
+np.round(r2_rf, 2)
+
+explainer = shap.TreeExplainer(rf)
+shap_values = explainer.shap_values(X_trn)
+
+#Boruta
+feat_selector = BorutaPy(rf, n_estimators='auto', verbose=2, random_state=1)
+
+# find all relevant features - 5 features should be selected
+feat_selector.fit(X, y.ravel())
+
+# check selected features - first 5 features are selected
+feat_selector.support_
+
+# check ranking of features
+feat_selector.ranking_
+
+# call transform() on X to filter it down to selected features
+X_filtered = feat_selector.transform(X)
 
 #########################################
 
