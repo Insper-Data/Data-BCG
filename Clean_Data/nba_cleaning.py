@@ -1,30 +1,28 @@
 import pandas as pd
-c
 import scraping_Functions as sf
 
 # Pulling the data scraping functions
 
 # performance = sf.get_aggregated_season_data(1980)
-
 per_game_data = sf.get_game_data(2009)
 birthplaces = sf.get_birthplaces()
 high_schools = sf.get_high_school_cities()
 player_id = sf.get_players_id()
 
-# Standardizing each database
+# Standarizing each database
 
 # I removed the * at the end of the name of the players from every player
 
 # performance.player = performance.player.str.replace("\*", "")
 
-player_id = player_id.rename(str.lower, axis = "columns")
+player_id = player_id.rename(str.lower, axis="columns")
 per_game_data = pd.merge(per_game_data, player_id, how="left", on="id")
 names = per_game_data["player"]
 per_game_data.drop("player", axis=1, inplace=True)
 per_game_data.insert(0, "player", names)
 
 # Eliminated columns that weren't useful to the final database
-high_schools = high_schools.iloc[:, [0, 1, 2]].rename(str.lower, axis = "columns")
+high_schools = high_schools.iloc[:, [0, 1, 2]].rename(str.lower, axis="columns")
 high_schools.player = high_schools.player.str.replace("\*", "")
 
 # Restricted the sample to players that were born in the US

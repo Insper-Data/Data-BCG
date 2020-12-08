@@ -9,6 +9,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 import tkinter as tk
 from tkinter import filedialog
+import shap
+from sklearn.model_selection import cross_val_score
+import boruta
 
 # Function that identifies the database's filepath
 def get_datapath(message):
@@ -17,48 +20,26 @@ def get_datapath(message):
     return filedialog.askopenfilename(title=message)
 
 # Importing the database
-db = pd.read_csv(get_datapath("Selecione a base de dados"))
+db = pd.read_csv("pre_model_data/df_2009_2015_feat_engineered3.csv")
 
 # Removing useless variables
 db = (db >>
-      select(-_["player":"date", "tm":"pts", "state":"YEAR"], _.norm_pts))
+      select(-_["Unnamed: 0":"date", "tm":"pts", "metarea":"norm_arrests", "norm_pts", "norm_gmsc", "norm_hhtenure":"norm_nfathers"]))
 
 # " + ".join(db.columns) # -> makes writing the formula easier
 
-y, X = patsy.dmatrices('gmsc ~ age + lag_point_rolling3_avg \
-                        + lag_point_rolling6_avg + lag_point_rolling9_avg + lag_point_rolling3_min \
-                        + lag_point_rolling6_min + lag_point_rolling9_min + lag_point_rolling3_std \
-                        + lag_point_rolling6_std + lag_point_rolling9_std + lag_gmsc_rolling3_avg \
-                        + lag_gmsc_rolling6_avg + lag_gmsc_rolling9_avg + lag_gmsc_rolling3_min \
-                        + lag_gmsc_rolling6_min + lag_gmsc_rolling9_min + lag_gmsc_rolling3_std \
-                        + lag_gmsc_rolling6_std + lag_gmsc_rolling9_std + seconds_played \
-                        + lag_time_played_rolling3_avg + lag_time_played_rolling6_avg \
-                        + lag_time_played_rolling9_avg + lag_time_played_rolling3_min \
-                        + lag_time_played_rolling6_min + lag_time_played_rolling9_min \
-                        + lag_time_played_rolling3_std + lag_time_played_rolling6_std \
-                        + lag_time_played_rolling9_std + ASECFLAG + ASECWTH + MISH \
-                        + NUMPREC + HHTENURE + GQ + HHINTYPE + CPI99 + REGION + STATEFIP \
-                        + METRO + METAREA + OWNERSHP + HHINCOME + PUBHOUS + RENTSUB \
-                        + FOODSTMP + STAMPNO + STAMPMO + ATELUNCH + LUNCHSUB + FRELUNCH \
-                        + STAMPVAL + FAMINC + UNITSSTR + NFAMS + NCOUPLES + NMOTHERS \
-                        + NFATHERS + HRHHID + HSEQ + HHRESPLN + M0_9 + M10_12 + M13_14 \
-                        + M15 + M16 + M17 + M18 + M19 + M20 + M21 + M22 + M23 + M24 \
-                        + M25_29 + M30_34 + M35_39 + M40_44 + M45_49 + M50_54 + M55_59 \
-                        + M60_64 + M65 + F0_9 + F10_12 + F13_14 + F15 + F16 + F17 + F18 \
-                        + F19 + F20 + F21 + F22 + F23 + F24 + F25_29 + F30_34 + F35_39 \
-                        + F40_44 + F45_49 + F50_54 + F55_59 + F60_64 + F65 + AW + AB \
-                        + AI + AA + JW + JB + JI + JA + AH + AN + JH + JN + arrests \
-                        + norm_arrests + mean_arrests_year + std_arrests_year + min_arrests_year \
-                        + median_arrests_year + rolling_avg3_arrests + rolling_avg6_arrests \
-                        + rolling_avg9_arrests + rolling_std3_arrests + rolling_std6_arrests \
-                        + rolling_std9_arrests' , data = db)
+y, X = patsy.dmatrices("gmsc ~ age + norm_pts_lag \
+                        + won_last \
+                        + norm_arrests_lag \
+                        + lag_rolling_avg3_arrests \
+                        + lag_rolling_std3_arrests + time_played_lag", data=db)
 
 X_trn, X_tst, y_trn, y_tst = train_test_split(X, y, test_size=0.7, random_state=1234)
 
 # Random Forest Model
 
 ## Defining the Model
-rf = RandomForestRegressor(n_estimators=500, random_state=1234)
+rf = RandomForestRegressor(n_estimators=500, random_state=1234, n_jobs=4)
 
 ## Fitting
 rf.fit(X_trn, y_trn.ravel())
@@ -70,19 +51,37 @@ np.round(RMSE_rf, 2)
 r2_rf = r2_score(y_tst, y_hat_rf)
 np.round(r2_rf, 2)
 
+explainer = shap.TreeExplainer(rf)
+shap_values = explainer.shap_values(X_trn)
+
+#Boruta
+feat_selector = BorutaPy(rf, n_estimators='auto', verbose=2, random_state=1)
+
+# find all relevant features - 5 features should be selected
+feat_selector.fit(X, y.ravel())
+
+# check selected features - first 5 features are selected
+feat_selector.support_
+
+# check ranking of features
+feat_selector.ranking_
+
+# call transform() on X to filter it down to selected features
+X_filtered = feat_selector.transform(X)
+
 #########################################
 
-# Gradient Boosted Decision-Trees
-
-## Defining the Model
-boost = GradientBoostingRegressor(learning_rate=0.3, random_state=1234)
-
-## Fitting
-boost.fit(X_trn, y_trn.ravel())
-
-## Analyzing the model's performance
-y_hat_boost = boost.predict(X_tst)
-RMSE_boost = np.sqrt(mean_squared_error(y_tst, y_hat_boost))
-np.round(RMSE_boost, 2)
-r2_boost = r2_score(y_tst, y_hat_boost)
-np.round(r2_boost, 2)
+# # Gradient Boosted Decision-Trees
+#
+# ## Defining the Model
+# boost = GradientBoostingRegressor(learning_rate=0.3, random_state=1234)
+#
+# ## Fitting
+# boost.fit(X_trn, y_trn.ravel())
+#
+# ## Analyzing the model's performance
+# y_hat_boost = boost.predict(X_tst)
+# RMSE_boost = np.sqrt(mean_squared_error(y_tst, y_hat_boost))
+# np.round(RMSE_boost, 2)
+# r2_boost = r2_score(y_tst, y_hat_boost)
+# np.round(r2_boost, 2)
