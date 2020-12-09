@@ -163,3 +163,14 @@ id_df["game_id"] = np.array(range(len(id_df))) + 1
 df = df.merge(id_df, how = "inner", on = ["year", "g"])
 
 df.to_csv("pre_model_data/df_2009_2015_feat_engineered5.csv")
+
+#### CÓDIGO PARA CRIAR DADOS DOS TIMES A SEREM UTILIZADOS ####
+
+# teams = ((df >>
+#   select(_["g", "year", "tm", "fg":"pts"]))
+#    .filter(regex="[^%]$")
+#    .groupby(["g", "year", "tm"])
+#    .agg("sum")
+#    .reset_index())
+
+# df.merge(teams, how="inner", on=["tm", "g", "year"])
