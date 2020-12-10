@@ -171,6 +171,10 @@ df.to_csv("pre_model_data/df_2009_2015_feat_engineered5.csv")
 #    .filter(regex="[^%]$")
 #    .groupby(["g", "year", "tm"])
 #    .agg("sum")
-#    .reset_index())
+#    .reset_index()
+#    .add_prefix("opp_")
+#    .rename(columns={"opp_year": "year",
+#                     "opp_tm": "opp",
+#                     "opp_g": "g"}))
 
-# df.merge(teams, how="inner", on=["tm", "g", "year"])
+# df.merge(teams, how="inner", on=["opp", "g", "year"])

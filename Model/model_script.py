@@ -20,7 +20,7 @@ def get_datapath(message):
     root.withdraw()
     return filedialog.askopenfilename(title=message)
 
-db = get_datapath(message="Select file")
+db = pd.read_csv(get_datapath(message="Select file"))
 
 # Importing the database
 db = pd.read_csv("pre_model_data/df_2009_2015_feat_engineered3.csv")
