@@ -27,15 +27,73 @@ def min_to_sec(string):
     sec = int(ls[1])
     return min * 60 + sec
 
+
 # Importing dataframe
 df = pd.read_csv("{}/cleaned_data/df_prepoc_2009_2015.csv".format(clean_wd))
+df = df.sort_values(["player", "date"])
+df_all_games = pd.read_csv("{}/cleaned_data/all_games_2009_2015.csv".format(clean_wd))
 
-df_antes = df
-
-# Renaming columns
+# # Renaming columns
 df.drop(["Unnamed: 0", "Unnamed: 29", "metfips_x", "metfips_y", "YEAR_x", "YEAR_y"], axis=1, inplace=True)
 
-# Creating and shifting variables
+# CÓDIGO PARA CRIAR DADOS DOS TIMES A SEREM UTILIZADOS
+teams = ((df_all_games >>
+    select(_["g", "year", "tm", "fg":"pts"]))
+   .filter(regex="[^%]$")
+   .groupby(["g", "year", "tm"])
+   .agg("sum")
+   .reset_index()
+   .add_prefix("opp_")
+   .rename(columns={"opp_year": "year",
+                    "opp_tm": "opp",
+                    "opp_g": "g"}))
+
+df = df.merge(teams, how="inner", on=["opp", "year", "g"])
+
+opps = ((df_all_games >>
+    select(_["g", "year", "tm", "fg":"pts"]))
+   .filter(regex="[^%]$")
+   .groupby(["g", "year", "tm"])
+   .agg("sum")
+   .reset_index()
+   .add_prefix("tm_")
+   .rename(columns={"tm_year": "year",
+                    "tm_tm": "tm",
+                    "tm_g": "g"}))
+
+teams = teams.sort_values(["opp", "year", "g"])
+df = df.merge(opps, how="inner", on=["tm", "year", "g"])
+df = df.drop(["opp_fg", "opp_fga", "opp_3pa", "opp_ft", "opp_fta", "opp_drb", "opp_trb", "opp_tov", "opp_pf","opp_orb",
+              "tm_fg", "tm_orb", "tm_fga", "tm_3pa", "tm_ft", "tm_fta", "tm_drb", "tm_tov", "tm_pf", "tm_trb",], axis=1)
+
+# # Creating and shifting variables
+
+# Team and Opponent Variables
+df["norm_opp_3p"] = preprocessing.scale(df["opp_3p"])
+df["norm_opp_ast"] = preprocessing.scale(df["opp_3p"])
+df["norm_opp_stl"] = preprocessing.scale(df["opp_3p"])
+df["norm_opp_blk"] = preprocessing.scale(df["opp_3p"])
+df["norm_opp_pts"] = preprocessing.scale(df["opp_3p"])
+
+df["norm_tm_3p"] = preprocessing.scale(df["opp_3p"])
+df["norm_tm_ast"] = preprocessing.scale(df["opp_3p"])
+df["norm_tm_stl"] = preprocessing.scale(df["opp_3p"])
+df["norm_tm_blk"] = preprocessing.scale(df["opp_3p"])
+df["norm_tm_pts"] = preprocessing.scale(df["opp_3p"])
+
+df["lag_norm_opp_3p"] = df.groupby(["tm", "year"]).norm_opp_3p.shift()
+df["lag_norm_opp_ast"] = df.groupby(["tm", "year"]).norm_opp_ast.shift()
+df["lag_norm_opp_stl"] = df.groupby(["tm", "year"]).norm_opp_stl.shift()
+df["lag_norm_opp_blk"] = df.groupby(["tm", "year"]).norm_opp_blk.shift()
+df["lag_norm_opp_pts"] = df.groupby(["tm", "year"]).norm_opp_pts.shift()
+
+df["lag_norm_tm_3p"] = df.groupby(["tm", "year"]).norm_tm_3p.shift()
+df["lag_norm_tm_ast"] = df.groupby(["tm", "year"]).norm_tm_ast.shift()
+df["lag_norm_tm_stl"] = df.groupby(["tm", "year"]).norm_tm_stl.shift()
+df["lag_norm_tm_blk"] = df.groupby(["tm", "year"]).norm_tm_blk.shift()
+df["lag_norm_tm_pts"] = df.groupby(["tm", "year"]).norm_tm_pts.shift()
+
+df = df.sort_values(["player", "date"])
 
 # Arrests
 df["norm_arrests"] = preprocessing.scale(df["OCCUR"])
@@ -176,27 +234,10 @@ df["lag_ncouples_rolling3_std"] = df.groupby(["METFIPS"]).lag_norm_ncouples.tran
 df["lag_nmothers_rolling3_std"] = df.groupby(["METFIPS"]).lag_norm_nmothers.transform(lambda x: x.rolling(3, min_periods=2).std())
 df["lag_nfathers_rolling3_std"] = df.groupby(["METFIPS"]).lag_norm_nfathers.transform(lambda x: x.rolling(3, min_periods=2).std())
 
-id_df = pd.DataFrame([(x, y) for x in list(set(df.year)) for y in list(set(df.g))], columns = ["year", "g"])
+id_df = pd.DataFrame([(x, y) for x in list(set(df.year)) for y in list(set(df.g))], columns=["year", "g"])
 id_df["game_id"] = np.array(range(len(id_df))) + 1
 
-df = df.merge(id_df, how = "inner", on = ["year", "g"])
+df = df.merge(id_df, how="inner", on=["year", "g"])
+df = df.sort_values(["player", "date"])
 
-df.to_csv("pre_model_data/df_2009_2015_feat_engineered5.csv")
-
-#### CÓDIGO PARA CRIAR DADOS DOS TIMES A SEREM UTILIZADOS ####
-
-# teams = ((df >>
-#   select(_["g", "year", "tm", "fg":"pts"]))
-#    .filter(regex="[^%]$")
-#    .groupby(["g", "year", "tm"])
-#    .agg("sum")
-#    .reset_index()
-#    .add_prefix("opp_")
-#    .rename(columns={"opp_year": "year",
-#                     "opp_tm": "opp",
-#                     "opp_g": "g"}))
-
-# df.merge(teams, how="inner", on=["opp", "g", "year"])
-# df.merge(teams, how="inner", on=["tm", "g", "year"])
-
-df.to_csv("pre_model_data/df_2009_2015_feat_engineered8.csv")
+df.to_csv("pre_model_data/df_2009_2015_feat_engineered9.csv")

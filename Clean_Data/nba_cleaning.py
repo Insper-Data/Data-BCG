@@ -1,7 +1,5 @@
 import pandas as pd
-import scraping_Functions as sf
-
-# Pulling the data scraping functions
+from Data_BCG.Download_Data import scraping_Functions as sf
 
 # performance = sf.get_aggregated_season_data(1980)
 per_game_data = sf.get_game_data(2009)
@@ -48,7 +46,6 @@ df_fips = pd.read_csv("{}/Data/fips_data.csv".format(download_wd))
 df_final_game = pd.merge(per_game_aggr, df_fips, how="left", left_on=["state", "birthplace"], right_on=["state_id", "city_ascii"])
 df_final_game.drop(["state_id", "city_ascii"], inplace=True, axis=1)
 df_final_game.sort_values(["metfips"], inplace=True)
-
 
 # Checking Na percentage
 # percent_missing = df_final_season.isnull().sum() * 100 / len(df_final_season)

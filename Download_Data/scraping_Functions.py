@@ -1,6 +1,6 @@
 import requests
 import pandas as pd
-import countries_and_states
+from Data_BCG.Download_Data import countries_and_states
 from bs4 import BeautifulSoup
 
 
