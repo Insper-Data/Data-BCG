@@ -11,16 +11,15 @@ import tkinter as tk
 from tkinter import filedialog
 import shap
 from sklearn.model_selection import cross_val_score, TimeSeriesSplit
-import boruta
+from boruta import BorutaPy
+import pickle
 
-
-# Function that identifies the database's filepath
-# def get_datapath(message):
-#     root = tk.Tk()
-#     root.withdraw()
-#     return filedialog.askopenfilename(title=message)
-
-# db = pd.read_csv(get_datapath(message="Select file"))
+# # Function that identifies the database's filepath
+# # def get_datapath(message):
+# #     root = tk.Tk()
+# #     root.withdraw()
+# #     return filedialog.askopenfilename(title=message)
+# # db = pd.read_csv(get_datapath(message="Select file"))
 
 # Importing the database
 db = pd.read_csv("pre_model_data/df_2009_2015_feat_engineered9.csv")
@@ -32,7 +31,7 @@ db = (db >>
 
 # " + ".join(db.columns) # -> makes writing the formula easier
 
-y, X = patsy.dmatrices("gmsc ~ month + year \
+y, X = patsy.dmatrices("gmsc ~ year \
                         + lag_age \
                         + lag_gmsc \
                         + state \
@@ -57,48 +56,73 @@ y, X = patsy.dmatrices("gmsc ~ month + year \
                         + lag_norm_nmothers + lag_norm_nfathers", data=db)
 
 
-# # Time-consistent train and test split
-# tscv = TimeSeriesSplit()
-# print(tscv)
-#
-# for train_index, test_index in tscv.split(X):
-#     print("TRAIN:", train_index, "TEST:", test_index)
-#     X_train, X_test = X[train_index], X[test_index]
-#     y_train, y_test = y[train_index], y[test_index]
-#
-#
-# # Random Forest Model
-#
-# ## Defining the Model
-# rf = RandomForestRegressor(n_estimators=500, random_state=1234, n_jobs=4)
-#
-# ## Fitting
-# rf.fit(X_train, y_train.ravel())
-#
-# ## Analyzing the model's performance
-# y_hat_rf = rf.predict(X_test)
-# RMSE_rf = np.sqrt(mean_squared_error(y_hat_rf, y_test))
-# np.round(RMSE_rf, 2)
-# r2_rf = r2_score(y_test, y_hat_rf)
-# np.round(r2_rf, 2)
-#
-# explainer = shap.TreeExplainer(rf)
-# shap_values = explainer.shap_values(X_train)
-#
-# #Boruta
-# feat_selector = BorutaPy(rf, n_estimators='auto', verbose=2, random_state=1)
-#
-# # find all relevant features - 5 features should be selected
-# feat_selector.fit(X, y.ravel())
-#
-# # check selected features - first 5 features are selected
-# feat_selector.support_
-#
-# # check ranking of features
-# feat_selector.ranking_
-#
-# # call transform() on X to filter it down to selected features
-# X_filtered = feat_selector.transform(X)
+# Time-consistent train and test split
+tscv = TimeSeriesSplit()
+
+for train_index, test_index in tscv.split(X):
+    print("TRAIN:", train_index, "TEST:", test_index)
+    X_train, X_test = X[train_index], X[test_index]
+    y_train, y_test = y[train_index], y[test_index]
+
+# Random Forest Model
+# Defining the Model
+rf = RandomForestRegressor(n_estimators=200, random_state=1234, n_jobs=-1, max_depth=10)
+
+# Fitting
+rf.fit(X_train, y_train.ravel())
+
+# Analyzing the model's performance
+y_hat_rf = rf.predict(X_test)
+RMSE_rf = np.sqrt(mean_squared_error(y_hat_rf, y_test))
+np.round(RMSE_rf, 2)
+r2_rf = r2_score(y_test, y_hat_rf)
+np.round(r2_rf, 2)
+
+Boruta
+feat_selector = BorutaPy(rf, n_estimators='auto', verbose=2, random_state=1)
+feat_selector.fit(X, y.ravel())
+selected_vars = X.columns[feat_selector_].to_list()
+
+y_boruta, X_boruta = patsy.dmatrices("gmsc ~ + lag_point_rolling6_avg + lag_gmsc_rolling9_avg + \
+                                    lag_time_played_rolling3_avg + lag_time_played", data=db)
+
+for train_index, test_index in tscv.split(X):
+    print("TRAIN:", train_index, "TEST:", test_index)
+    X_train, X_test = X_boruta[train_index], X_boruta[test_index]
+    y_train, y_test = y_boruta[train_index], y_boruta[test_index]
+
+# Defining the Model
+rf = RandomForestRegressor(n_estimators=200, random_state=1234, n_jobs=-1, max_depth=10)
+
+# Fitting
+rf.fit(X_train, y_train.ravel())
+
+# Analyzing the model's performance
+y_hat_rf = rf.predict(X_test)
+RMSE_rf_boruta = np.sqrt(mean_squared_error(y_hat_rf, y_test))
+np.round(RMSE_rf_boruta, 2)
+r2_rf_boruta = r2_score(y_test, y_hat_rf)
+np.round(r2_rf_boruta, 2)
+
+
+# SHAP
+explainer = shap.TreeExplainer(rf)
+shap_values = explainer.shap_values(X_train)
+
+## Salvando resultado do SHAP com pickle
+# filename="shap_result"
+# outfile = open(filename,'wb')
+# pickle.dump(shap_values, outfile)
+# outfile.close()
+# infile = open("shap_result", "rb")
+# shap_values = pickle.load(infile)
+
+# Visualizando resultados do SHAP
+shap.summary_plot(shap_values, X_train, plot_type="bar", feature_names=["", "Média Móvel Pontos (6 jogos)", "Média Móvel GMSC (9 jogos)",
+                                                                        "Média Móvel Tempo de Jogo (3 jogos)", "Tempo de Jogo"])
+
+shap.summary_plot(shap_values, X_train, feature_names=["", "Média Móvel Pontos (6 jogos)", "Média Móvel GMSC (9 jogos)",
+                                                                        "Média Móvel Tempo de Jogo (3 jogos)", "Tempo de Jogo"])
 
 #########################################
 
