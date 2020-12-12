@@ -53,7 +53,7 @@ y, X = patsy.dmatrices("gmsc ~ year \
                         + lag_norm_hhtenure + lag_norm_ownershp + lag_norm_hhincome + lag_norm_pubhous \
                         + lag_norm_rentsub + lag_norm_foodstmp + lag_norm_atelunch + lag_norm_lunchsub \
                         + lag_norm_frelunch + lag_norm_stampval + lag_norm_faminc + lag_norm_nfams + lag_norm_ncouples \
-                        + lag_norm_nmothers + lag_norm_nfathers", data=db)
+                        + lag_norm_nmothers + lag_norm_nfathers", data=db, return_type="matrix")
 
 
 # Time-consistent train and test split
@@ -83,20 +83,20 @@ feat_selector = BorutaPy(rf, n_estimators='auto', verbose=2, random_state=1)
 feat_selector.fit(X, y.ravel())
 selected_vars = X.columns[feat_selector_].to_list()
 
-y_boruta, X_boruta = patsy.dmatrices("gmsc ~ + lag_point_rolling6_avg + lag_gmsc_rolling9_avg + \
+y_boruta, X_boruta = patsy.dmatrices("gmsc ~ lag_point_rolling6_avg + lag_gmsc_rolling9_avg + \
                                     lag_time_played_rolling3_avg + lag_time_played", data=db)
 
 for train_index, test_index in tscv.split(X):
     print("TRAIN:", train_index, "TEST:", test_index)
     X_train, X_test = X_boruta[train_index], X_boruta[test_index]
     y_train, y_test = y_boruta[train_index], y_boruta[test_index]
-
+#
 # Defining the Model
 rf = RandomForestRegressor(n_estimators=200, random_state=1234, n_jobs=-1, max_depth=10)
-
+#
 # Fitting
 rf.fit(X_train, y_train.ravel())
-
+#
 # Analyzing the model's performance
 y_hat_rf = rf.predict(X_test)
 RMSE_rf_boruta = np.sqrt(mean_squared_error(y_hat_rf, y_test))
@@ -104,18 +104,9 @@ np.round(RMSE_rf_boruta, 2)
 r2_rf_boruta = r2_score(y_test, y_hat_rf)
 np.round(r2_rf_boruta, 2)
 
-
 # SHAP
 explainer = shap.TreeExplainer(rf)
 shap_values = explainer.shap_values(X_train)
-
-## Salvando resultado do SHAP com pickle
-# filename="shap_result"
-# outfile = open(filename,'wb')
-# pickle.dump(shap_values, outfile)
-# outfile.close()
-# infile = open("shap_result", "rb")
-# shap_values = pickle.load(infile)
 
 # Visualizando resultados do SHAP
 shap.summary_plot(shap_values, X_train, plot_type="bar", feature_names=["", "Média Móvel Pontos (6 jogos)", "Média Móvel GMSC (9 jogos)",
@@ -124,22 +115,90 @@ shap.summary_plot(shap_values, X_train, plot_type="bar", feature_names=["", "Mé
 shap.summary_plot(shap_values, X_train, feature_names=["", "Média Móvel Pontos (6 jogos)", "Média Móvel GMSC (9 jogos)",
                                                                         "Média Móvel Tempo de Jogo (3 jogos)", "Tempo de Jogo"])
 
+# # Salvando resultado do SHAP com pickle
+# filename="shap_result"
+# outfile = open(filename,'wb')
+# pickle.dump(shap_values, outfile)
+# outfile.close()
+#
+# # Abrindo resultado do SHAP com pickle
+# infile = open("shap_result", "rb")
+# shap_values = pickle.load(infile)
+
 #########################################
 
-# # Gradient Boosted Decision-Trees
-#
-# ## Defining the Model
-# boost = GradientBoostingRegressor(learning_rate=0.3, random_state=1234)
-#
-# ## Fitting
-# boost.fit(X_train, y_train.ravel())
-#
-# ## Analyzing the model's performance
-# y_hat_boost = boost.predict(X_test)
-# RMSE_boost = np.sqrt(mean_squared_error(y_test, y_hat_boost))
-# np.round(RMSE_boost, 2)
-# r2_boost = r2_score(y_test, y_hat_boost)
-# np.round(r2_boost, 2)
+
+# Gradient Boosted Decision-Trees
+
+# Defining the Model
+boost = GradientBoostingRegressor(learning_rate=0.3, random_state=1234)
+
+# Fitting
+boost.fit(X_train, y_train.ravel())
+
+# Analyzing the model's performance
+y_hat_boost = boost.predict(X_test)
+RMSE_boost = np.sqrt(mean_squared_error(y_test, y_hat_boost))
+np.round(RMSE_boost, 2)
+r2_boost = r2_score(y_test, y_hat_boost)
+np.round(r2_boost, 2)
+
+# Boruta
+feat_selector = BorutaPy(boost, n_estimators='auto', verbose=2, random_state=1)
+feat_selector.fit(X, y.ravel())
+selected_vars = X.columns[feat_selector.support_].to_list()
+selected_vars_weak = X.columns[feat_selector.support_weak_].to_list()
+
+# Selecting olny boruta approved variables
+y_boruta, X_boruta = patsy.dmatrices("gmsc ~ + lag_point_rolling3_avg + lag_point_rolling6_avg + lag_point_rolling9_avg + lag_gmsc_rolling3_avg \
+                                     + lag_gmsc_rolling6_avg + lag_gmsc_rolling9_avg + lag_gmsc_rolling9_std + lag_time_played_rolling3_avg \
+                                     + lag_time_played_rolling6_avg + lag_time_played_rolling9_avg + lag_time_played", data=db, return_type="matrix")
+
+# Splitting training and test for boruta selction
+tscv = TimeSeriesSplit()
+
+for train_index, test_index in tscv.split(X):
+    print("TRAIN:", train_index, "TEST:", test_index)
+    X_train, X_test = X_boruta[train_index], X_boruta[test_index]
+    y_train, y_test = y_boruta[train_index], y_boruta[test_index]
+
+
+# Fitting with Boruta selection
+boost = GradientBoostingRegressor(learning_rate=0.3, random_state=1234)
+boost.fit(X_train, y_train.ravel())
+
+# Analyzing the model's performance with boruta selection
+y_hat_boost = boost.predict(X_test)
+RMSE_boost = np.sqrt(mean_squared_error(y_test, y_hat_boost))
+np.round(RMSE_boost, 2)
+r2_boost = r2_score(y_test, y_hat_boost)
+np.round(r2_boost, 2)
+
+# SHAP with boruta selection
+explainer = shap.TreeExplainer(boost)
+shap_values = explainer.shap_values(X_train)
+
+# # Visualizando resultados do SHAP
+shap.summary_plot(shap_values, X_train, plot_type="bar", feature_names=['',  'Média Móvel Pontos (3 jogos)',
+    'Média Móvel Pontos (6 jogos)', 'Média Móvel Pontos (9 jogos)', 'Média Móvel GMSC (3 jogos)', 'Média Móvel GMSC (6 jogos)',
+    'Média Móvel GMSC (9 jogos)', 'Desvio Padrão GMSC (9 jogos)', 'Média Móvel Tempo de Jogo (3 jogos)', 'Média Móvel Tempo de Jogo (6 jogos)',
+    'Média Móvel Tempo de Jogo (9 jogos)', 'Tempo de Jogo'])
+shap.summary_plot(shap_values, X_train, feature_names=['',  'Média Móvel Pontos (3 jogos)',
+    'Média Móvel Pontos (6 jogos)', 'Média Móvel Pontos (9 jogos)', 'Média Móvel GMSC (3 jogos)', 'Média Móvel GMSC (6 jogos)',
+    'Média Móvel GMSC (9 jogos)', 'Desvio Padrão GMSC (9 jogos)', 'Média Móvel Tempo de Jogo (3 jogos)', 'Média Móvel Tempo de Jogo (6 jogos)',
+    'Média Móvel Tempo de Jogo (9 jogos)', 'Tempo de Jogo'])
+
+## Salvando resultado do SHAP com pickle
+# filename="boost_result"
+# outfile = open(filename,'wb')
+# pickle.dump(shap_values, outfile)
+# outfile.close()
+
+## Abrindo resultado do SHAP com pickle
+# infile = open("boost_result", "rb")
+# shap_values = pickle.load(infile)
+
+
 
 # LightGBM
 # Creating dataset
