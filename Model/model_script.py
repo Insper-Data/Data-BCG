@@ -4,11 +4,9 @@ from siuba import *
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from sklearn.metrics import mean_squared_error, r2_score
-from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-from sklearn.model_selection import cross_val_score, TimeSeriesSplit
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.compose import make_column_transformer
+from sklearn.model_selection import TimeSeriesSplit
+from sklearn.preprocessing import LabelEncoder
 import tkinter as tk
 from tkinter import filedialog
 import shap
@@ -30,34 +28,36 @@ db = (db >>
       select(-_["age","hs_city", "county_name", "Unnamed: 0":"date", "tm":"pts", "county_fips":"norm_tm_pts",
               "norm_arrests":"median_arrests_year", "norm_hhtenure":"norm_nfathers", "norm_pts":"norm_gmsc"]))
 
-# Removing na's
+# Initializing label encoder
+le = LabelEncoder()
+db["state_cat"] = le.fit_transform(db["state"])
+db["birthplace_cat"] = le.fit_transform(db["birthplace"])
+
+# Removing na's, city and state columns
 db.dropna(axis="rows", inplace=True)
+db.drop(["state","birthplace"],axis="columns", inplace=True)
 
 # Separating X and Y
-y = db["gmsc"].to_numpy()
+y = db["gmsc"].ravel()
 X = db.drop("gmsc", axis="columns")
+
+# Saving feature names for later use
+feature_names = X.columns
+
+# Trasnforming features to numpy array
+X = X.to_numpy()
+
+# Time-consistent train and test split
+tscv = TimeSeriesSplit()
+for train_index, test_index in tscv.split(X):
+    X_train, X_test = X[train_index], X[test_index]
+    y_train, y_test = y[train_index], y[test_index]
 
 # Creating random forest model
 rf = RandomForestRegressor(n_estimators=200, random_state=1234, n_jobs=-1, max_depth=10)
 
-# Creating column transformer to separate categorical data and pipeline for rf
-column_trans = make_column_transformer((OneHotEncoder(), ["state", "birthplace"]), remainder="passthrough")
-column_trans.fit_transform(X)
-
-# Saving feature names for later use
-feature_names = column_trans.get_feature_names()
-
-# Saving encoded features
-X_enc = column_trans.fit_transform(X)
-
-# Time-consistent train and test split
-tscv = TimeSeriesSplit()
-for train_index, test_index in tscv.split(X_enc):
-    X_train, X_test = X_enc[train_index], X_enc[test_index]
-    y_train, y_test = y[train_index], y[test_index]
-
 # Fitting rf model on training data
-rf.fit(X_train, y_train.ravel())
+rf.fit(X_train, y_train)
 
 # Predicting on test data
 y_hat_rf = rf.predict(X_test)
@@ -68,130 +68,56 @@ np.round(RMSE_rf, 2)
 r2_rf = r2_score(y_test, y_hat_rf)
 np.round(r2_rf, 2)
 
+# Boruta
+feat_selector = BorutaPy(rf, n_estimators='auto', verbose=2, random_state=1, perc=1)
+feat_selector.fit(X, y)
 
-# # Boruta
-# feat_selector = BorutaPy(rf, n_estimators='auto', verbose=2, random_state=1, perc=0.99)
-# feat_selector.fit(X, y.ravel())
-# selected_vars = X.columns[feat_selector.support_].to_list()
-#
-# X_boruta = X[selected_vars]
-# db_boruta = pd.merge(y, X_boruta, left_index=True, right_index=True)
-# y, X_boruta = patsy.dmatrices("gmsc ~ state", data=db_boruta, return_type="matrix")
-#
-# for train_index, test_index in tscv.split(X):
-#     print("TRAIN:", train_index, "TEST:", test_index)
-#     X_train, X_test = X_boruta[train_index], X_boruta[test_index]
-#     y_train, y_test = y[train_index], y[test_index]
+# Selected vars
+selected_vars = X.columns[feat_selector.support_].to_list()
 
-# # #
-# # Defining the Model
-# rf = RandomForestRegressor(n_estimators=200, random_state=1234, n_jobs=-1, max_depth=10)
-# #
-# # Fitting
-# rf.fit(X_train, y_train.ravel())
-# #
-# # Analyzing the model's performance
-# y_hat_rf = rf.predict(X_test)
-# RMSE_rf_boruta = np.sqrt(mean_squared_error(y_hat_rf, y_test))
-# np.round(RMSE_rf_boruta, 2)
-# r2_rf_boruta = r2_score(y_test, y_hat_rf)
-# np.round(r2_rf_boruta, 2)
-#
-# # SHAP
-# explainer = shap.TreeExplainer(rf)
-# shap_values = explainer.shap_values(X_train)
-#
-# # Visualizando resultados do SHAP
-# shap.summary_plot(shap_values, X_train, plot_type="bar", feature_names=["", "Média Móvel Pontos (6 jogos)", "Média Móvel GMSC (9 jogos)",
-#                                                                         "Média Móvel Tempo de Jogo (3 jogos)", "Tempo de Jogo"])
-#
-# shap.summary_plot(shap_values, X_train, feature_names=["", "Média Móvel Pontos (6 jogos)", "Média Móvel GMSC (9 jogos)",
-#                                                                         "Média Móvel Tempo de Jogo (3 jogos)", "Tempo de Jogo"])
-#
-# # Salvando resultado do SHAP com pickle
-# filename="shap_result"
+# Removed vars
+removed_vars = [var for var in X.columns.values if var not in selected_vars]
+
+# Selecting boruta vars to retrain model
+X_boruta = db[selected_vars].values
+
+for train_index, test_index in tscv.split(X_boruta):
+    X_train, X_test = X_boruta[train_index], X_boruta[test_index]
+    y_train, y_test = y[train_index], y[test_index]
+
+# Refitting model based on boruta vars
+rf.fit(X_train, y_train)
+
+# Analyzing model performance with boruta vars
+y_hat_rf = rf.predict(X_test)
+RMSE_rf_boruta = np.sqrt(mean_squared_error(y_hat_rf, y_test))
+np.round(RMSE_rf_boruta, 2)
+r2_rf_boruta = r2_score(y_test, y_hat_rf)
+np.round(r2_rf_boruta, 2)
+
+# SHAP
+explainer = shap.TreeExplainer(rf)
+shap_values = explainer.shap_values(X_train)
+
+# Making dataframe of shapley values
+shap_df = pd.DataFrame(data=shap_values, columns=selected_vars)
+shap_df = shap_df.mean(axis="rows").abs().sort_values(ascending=False)
+
+# # Visualizing SHAP results
+# shap.summary_plot(shap_values, X_train, plot_type="bar", feature_names=selected_vars)
+# shap.summary_plot(shap_values, X_train, feature_names=selected_vars)
+
+# Saving SHAP results with pickle
+# filename="shap_result_perc_99"
 # outfile = open(filename,'wb')
 # pickle.dump(shap_values, outfile)
 # outfile.close()
 
-# # Abrindo resultado do SHAP com pickle
+# # Opening SHAP results with pickle
 # infile = open("shap_result", "rb")
 # shap_values = pickle.load(infile)
 
 #########################################
-
-
-# # Gradient Boosted Decision-Trees
-#
-# # Defining the Model
-# boost = GradientBoostingRegressor(learning_rate=0.3, random_state=1234)
-#
-# # Fitting
-# boost.fit(X_train, y_train.ravel())
-#
-# # Analyzing the model's performance
-# y_hat_boost = boost.predict(X_test)
-# RMSE_boost = np.sqrt(mean_squared_error(y_test, y_hat_boost))
-# np.round(RMSE_boost, 2)
-# r2_boost = r2_score(y_test, y_hat_boost)
-# np.round(r2_boost, 2)
-#
-# # Boruta
-# feat_selector = BorutaPy(boost, n_estimators='auto', verbose=2, random_state=1)
-# feat_selector.fit(X, y.ravel())
-# selected_vars = X.columns[feat_selector.support_].to_list()
-# selected_vars_weak = X.columns[feat_selector.support_weak_].to_list()
-#
-# # Selecting olny boruta approved variables
-# y_boruta, X_boruta = patsy.dmatrices("gmsc ~ + lag_point_rolling3_avg + lag_point_rolling6_avg + lag_point_rolling9_avg + lag_gmsc_rolling3_avg \
-#                                      + lag_gmsc_rolling6_avg + lag_gmsc_rolling9_avg + lag_gmsc_rolling9_std + lag_time_played_rolling3_avg \
-#                                      + lag_time_played_rolling6_avg + lag_time_played_rolling9_avg + lag_time_played", data=db, return_type="matrix")
-#
-# # Splitting training and test for boruta selction
-# tscv = TimeSeriesSplit()
-#
-# for train_index, test_index in tscv.split(X):
-#     print("TRAIN:", train_index, "TEST:", test_index)
-#     X_train, X_test = X_boruta[train_index], X_boruta[test_index]
-#     y_train, y_test = y_boruta[train_index], y_boruta[test_index]
-#
-#
-# # Fitting with Boruta selection
-# boost = GradientBoostingRegressor(learning_rate=0.3, random_state=1234)
-# boost.fit(X_train, y_train.ravel())
-#
-# # Analyzing the model's performance with boruta selection
-# y_hat_boost = boost.predict(X_test)
-# RMSE_boost = np.sqrt(mean_squared_error(y_test, y_hat_boost))
-# np.round(RMSE_boost, 2)
-# r2_boost = r2_score(y_test, y_hat_boost)
-# np.round(r2_boost, 2)
-#
-# # SHAP with boruta selection
-# explainer = shap.TreeExplainer(boost)
-# shap_values = explainer.shap_values(X_train)
-#
-# # # Visualizando resultados do SHAP
-# shap.summary_plot(shap_values, X_train, plot_type="bar", feature_names=['',  'Média Móvel Pontos (3 jogos)',
-#     'Média Móvel Pontos (6 jogos)', 'Média Móvel Pontos (9 jogos)', 'Média Móvel GMSC (3 jogos)', 'Média Móvel GMSC (6 jogos)',
-#     'Média Móvel GMSC (9 jogos)', 'Desvio Padrão GMSC (9 jogos)', 'Média Móvel Tempo de Jogo (3 jogos)', 'Média Móvel Tempo de Jogo (6 jogos)',
-#     'Média Móvel Tempo de Jogo (9 jogos)', 'Tempo de Jogo'])
-# shap.summary_plot(shap_values, X_train, feature_names=['',  'Média Móvel Pontos (3 jogos)',
-#     'Média Móvel Pontos (6 jogos)', 'Média Móvel Pontos (9 jogos)', 'Média Móvel GMSC (3 jogos)', 'Média Móvel GMSC (6 jogos)',
-#     'Média Móvel GMSC (9 jogos)', 'Desvio Padrão GMSC (9 jogos)', 'Média Móvel Tempo de Jogo (3 jogos)', 'Média Móvel Tempo de Jogo (6 jogos)',
-#     'Média Móvel Tempo de Jogo (9 jogos)', 'Tempo de Jogo'])
-
-## Salvando resultado do SHAP com pickle
-# filename="boost_result"
-# outfile = open(filename,'wb')
-# pickle.dump(shap_values, outfile)
-# outfile.close()
-
-## Abrindo resultado do SHAP com pickle
-# infile = open("boost_result", "rb")
-# shap_values = pickle.load(infile)
-
-
 
 # LightGBM
 # Creating dataset
