@@ -36,6 +36,9 @@ db["birthplace_cat"] = le.fit_transform(db["birthplace"])
 # Removing na's, city and state columns
 db.dropna(axis="rows", inplace=True)
 db.drop(["state","birthplace"],axis="columns", inplace=True)
+db_teste = db[:]
+
+db.drop(["date"],axis="columns", inplace=True)
 
 # Separating X and Y
 y = db["gmsc"].ravel()
@@ -151,9 +154,9 @@ y_pred_lgb = lgbm_model.predict(X_test, num_iteration=lgbm_model.best_iteration)
 RMSE_lgb = np.sqrt(mean_squared_error(y_pred_lgb, y_test))
 r2_rf = r2_score(y_test, y_pred_lgb)
 
-# # #  Boruta
-# feat_selector = BorutaPy(lgbmreg, n_estimators='auto', verbose=2, random_state=1, perc=90)
-# feat_selector.fit(X, y)
+# #  Boruta
+feat_selector = BorutaPy(lgbmreg, n_estimators='auto', verbose=2, random_state=1, perc=90)
+feat_selector.fit(X, y)
 
 # Selected vars
 selected_vars = feature_names[feat_selector.support_].to_list()
