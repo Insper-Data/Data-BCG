@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from datetime import datetime
 from siuba import *
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.ensemble import RandomForestRegressor
@@ -13,18 +14,18 @@ import pickle
 import lightgbm as lgb
 
 # # Function that identifies the database's filepath
-# # def get_datapath(message):
-# #     root = tk.Tk()
-# #     root.withdraw()
-# #     return filedialog.askopenfilename(title=message)
-# # db = pd.read_csv(get_datapath(message="Select file"))
+def get_datapath(message):
+    root = tk.Tk()
+    root.withdraw()
+    return filedialog.askopenfilename(title=message)
+db = pd.read_csv(get_datapath(message="Select file"))
 
 # Importing the database
 db = pd.read_csv("pre_model_data/df_2009_2015_feat_engineered9.csv")
 
 # # Removing useless variables
 db = (db >>
-      select(-_["age","hs_city", "county_name", "Unnamed: 0":"date", "tm":"pts", "county_fips":"norm_tm_pts",
+      select(-_["age","hs_city", "county_name", "Unnamed: 0":"g", "tm":"pts", "county_fips":"norm_tm_pts",
               "norm_arrests":"median_arrests_year", "norm_hhtenure":"norm_nfathers", "norm_pts":"norm_gmsc"]))
 
 # Initializing label encoder
@@ -43,13 +44,11 @@ X = db.drop("gmsc", axis="columns")
 # Saving feature names for later use
 feature_names = X.columns
 
-# Trasnforming features to numpy array
-X = X.to_numpy()
-
 # Time-consistent train and test split
+
 tscv = TimeSeriesSplit()
 for train_index, test_index in tscv.split(X):
-    X_train, X_test = X[train_index], X[test_index]
+    X_train, X_test = X[train_index].to_numpy(), X[test_index].to_numpy()
     y_train, y_test = y[train_index], y[test_index]
 
 # # Creating random forest model
@@ -187,3 +186,44 @@ y_pred_lgb_train = lgbm_model.predict(X_train, num_iteration=lgbm_model.best_ite
 RMSE_lgb_boruta_train = np.sqrt(mean_squared_error(y_pred_lgb_train, y_train))
 r2_rf_boruta_train = r2_score(y_train, y_pred_lgb_train)
 
+# Analyzing model performance over time
+
+X_boruta["parsed_date"] = [datetime.strptime(date, "%Y-%m-%d") for date in X_boruta.date]
+
+def train_test(X, y, date):
+    train_index = X.parsed_date <= date
+    test_date = sorted(list(set(X[X.parsed_date > date].parsed_date)))[0]
+    test_index = X.parsed_date == test_date
+    X_train = X[train_index].reset_index().to_numpy()
+    y_train = y[train_index]
+    X_test = X[test_index].reset_index().to_numpy()
+    y_test = y[test_index]
+    return X_train, y_train, X_test, y_test
+
+dic = {}
+
+for date in sorted(list(set(X.parsed_date)))[:len(dates) - 1:]:
+    X_train, y_train, X_test, y_test = train_test(X_boruta, y, date)
+
+    # Train and test
+    lgb_train = lgb.Dataset(X_train, y_train, feature_name=selected_vars,
+                            categorical_feature=["state_cat", "birthplace_cat"])
+
+    # Train
+    lgbm_model = lgb.train(params, lgb_train)
+
+    # predict test
+    y_pred_lgb_test = lgbm_model.predict(X_test, num_iteration=lgbm_model.best_iteration)
+
+    # Model performance on test data
+    RMSE_lgb_boruta_test = np.sqrt(mean_squared_error(y_pred_lgb_test, y_test))
+    r2_rf_boruta_test = r2_score(y_test, y_pred_lgb_test)
+
+    # predict train
+    y_pred_lgb_train = lgbm_model.predict(X_train, num_iteration=lgbm_model.best_iteration)
+
+    # Model performance on training data
+    RMSE_lgb_boruta_train = np.sqrt(mean_squared_error(y_pred_lgb_train, y_train))
+    r2_rf_boruta_train = r2_score(y_train, y_pred_lgb_train)
+
+    dic[str(date)] = (RMSE_lgb_boruta_test, r2_rf_boruta_test, RMSE_lgb_boruta_train, r2_rf_boruta_train)
