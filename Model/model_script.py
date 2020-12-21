@@ -36,9 +36,6 @@ db["birthplace_cat"] = le.fit_transform(db["birthplace"])
 # Removing na's, city and state columns
 db.dropna(axis="rows", inplace=True)
 db.drop(["state","birthplace"],axis="columns", inplace=True)
-db_teste = db[:]
-
-db.drop(["date"],axis="columns", inplace=True)
 
 # Separating X and Y
 y = db["gmsc"].ravel()
@@ -191,7 +188,7 @@ r2_rf_boruta_train = r2_score(y_train, y_pred_lgb_train)
 
 # Analyzing model performance over time
 
-X_boruta["parsed_date"] = [datetime.strptime(date, "%Y-%m-%d") for date in X_boruta.date]
+X_boruta["parsed_date"] = [datetime.strptime(date, "%Y-%m-%d") for date in X.date]
 
 def train_test(X, y, date):
     train_index = X.parsed_date <= date
@@ -205,7 +202,7 @@ def train_test(X, y, date):
 
 dic = {}
 
-for date in sorted(list(set(X.parsed_date)))[:len(dates) - 1:]:
+for date in sorted(list(set(X_boruta.parsed_date)))[:len(X_boruta.parsed_date) - 1:]:
     X_train, y_train, X_test, y_test = train_test(X_boruta, y, date)
 
     # Train and test
