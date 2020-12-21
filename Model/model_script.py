@@ -24,7 +24,7 @@ db = pd.read_csv("pre_model_data/df_2009_2015_feat_engineered9.csv")
 
 # # Removing useless variables
 db = (db >>
-      select(-_["age","hs_city", "county_name", "Unnamed: 0":"date", "tm":"pts", "county_fips":"norm_tm_pts",
+      select(-_["age","hs_city", "county_name", "Unnamed: 0":"g", "tm":"pts", "county_fips":"norm_tm_pts",
               "norm_arrests":"median_arrests_year", "norm_hhtenure":"norm_nfathers", "norm_pts":"norm_gmsc"]))
 
 # Initializing label encoder
@@ -35,6 +35,9 @@ db["birthplace_cat"] = le.fit_transform(db["birthplace"])
 # Removing na's, city and state columns
 db.dropna(axis="rows", inplace=True)
 db.drop(["state","birthplace"],axis="columns", inplace=True)
+db_teste = db[:]
+
+db.drop(["date"],axis="columns", inplace=True)
 
 # Separating X and Y
 y = db["gmsc"].ravel()
@@ -152,9 +155,9 @@ y_pred_lgb = lgbm_model.predict(X_test, num_iteration=lgbm_model.best_iteration)
 RMSE_lgb = np.sqrt(mean_squared_error(y_pred_lgb, y_test))
 r2_rf = r2_score(y_test, y_pred_lgb)
 
-# # #  Boruta
-# feat_selector = BorutaPy(lgbmreg, n_estimators='auto', verbose=2, random_state=1, perc=90)
-# feat_selector.fit(X, y)
+# #  Boruta
+feat_selector = BorutaPy(lgbmreg, n_estimators='auto', verbose=2, random_state=1, perc=90)
+feat_selector.fit(X, y)
 
 # Selected vars
 selected_vars = feature_names[feat_selector.support_].to_list()
@@ -186,4 +189,25 @@ y_pred_lgb_train = lgbm_model.predict(X_train, num_iteration=lgbm_model.best_ite
 # Model performance on training data
 RMSE_lgb_boruta_train = np.sqrt(mean_squared_error(y_pred_lgb_train, y_train))
 r2_rf_boruta_train = r2_score(y_train, y_pred_lgb_train)
+
+
+# Testando código doidão do David
+
+def time_split(data, n_periods):
+    time_array = list(enumerate(data), start=0)
+
+
+    
+a = list(enumerate(db_teste["date"], start=0))
+a.value
+
+
+
+periodo_de_teste = 5
+for i in enumerate(db_teste["date"]):
+    print(i)
+
+
+
+
 
