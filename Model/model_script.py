@@ -185,6 +185,7 @@ y_pred_lgb_train = lgbm_model.predict(X_train, num_iteration=lgbm_model.best_ite
 # Model performance on training data
 RMSE_lgb_boruta_train = np.sqrt(mean_squared_error(y_pred_lgb_train, y_train))
 r2_rf_boruta_train = r2_score(y_train, y_pred_lgb_train)
+<<<<<<< HEAD
 
 # Analyzing model performance over time
 
