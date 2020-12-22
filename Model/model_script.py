@@ -14,11 +14,11 @@ import pickle
 import lightgbm as lgb
 
 # # Function that identifies the database's filepath
-def get_datapath(message):
-    root = tk.Tk()
-    root.withdraw()
-    return filedialog.askopenfilename(title=message)
-db = pd.read_csv(get_datapath(message="Select file"))
+# def get_datapath(message):
+#     root = tk.Tk()
+#     root.withdraw()
+#     return filedialog.askopenfilename(title=message)
+# db = pd.read_csv(get_datapath(message="Select file"))
 
 # Importing the database
 db = pd.read_csv("pre_model_data/df_2009_2015_feat_engineered9.csv")
@@ -40,15 +40,19 @@ db.drop(["state","birthplace"],axis="columns", inplace=True)
 # Separating X and Y
 y = db["gmsc"].ravel()
 X = db.drop("gmsc", axis="columns")
+X_copy = X[:]
+X.drop("date", axis="columns", inplace=True)
 
 # Saving feature names for later use
 feature_names = X.columns
 
-# Time-consistent train and test split
+# Transforming in to array
+X = X.values
 
+# Time-consistent train and test split
 tscv = TimeSeriesSplit()
 for train_index, test_index in tscv.split(X):
-    X_train, X_test = X[train_index].to_numpy(), X[test_index].to_numpy()
+    X_train, X_test = X[train_index], X[test_index]
     y_train, y_test = y[train_index], y[test_index]
 
 # # Creating random forest model
@@ -113,9 +117,8 @@ for train_index, test_index in tscv.split(X):
 
 #########################################
 # LightGBM
-# Creating datasets
 
-# Boruta
+# Creating datasets
 # Train and test
 lgb_train = lgb.Dataset(X_train, y_train, feature_name=feature_names.tolist(),
                         categorical_feature=["state_cat", "birthplace_cat"])
@@ -151,7 +154,7 @@ y_pred_lgb = lgbm_model.predict(X_test, num_iteration=lgbm_model.best_iteration)
 RMSE_lgb = np.sqrt(mean_squared_error(y_pred_lgb, y_test))
 r2_rf = r2_score(y_test, y_pred_lgb)
 
-# #  Boruta
+# Boruta
 feat_selector = BorutaPy(lgbmreg, n_estimators='auto', verbose=2, random_state=1, perc=90)
 feat_selector.fit(X, y)
 
@@ -159,10 +162,10 @@ feat_selector.fit(X, y)
 selected_vars = feature_names[feat_selector.support_].to_list()
 
 # Selecting boruta vars to retrain model
-X_boruta = db[selected_vars].values
+X_boruta = db[selected_vars]
 
 for train_index, test_index in tscv.split(X_boruta):
-    X_train, X_test = X_boruta[train_index], X_boruta[test_index]
+    X_train, X_test = X_boruta.values[train_index], X_boruta.values[test_index]
     y_train, y_test = y[train_index], y[test_index]
 
 # Train and test
@@ -185,25 +188,26 @@ y_pred_lgb_train = lgbm_model.predict(X_train, num_iteration=lgbm_model.best_ite
 # Model performance on training data
 RMSE_lgb_boruta_train = np.sqrt(mean_squared_error(y_pred_lgb_train, y_train))
 r2_rf_boruta_train = r2_score(y_train, y_pred_lgb_train)
-<<<<<<< HEAD
 
 # Analyzing model performance over time
 
-X_boruta["parsed_date"] = [datetime.strptime(date, "%Y-%m-%d") for date in X.date]
+X_boruta["parsed_date"] = [datetime.strptime(date, "%Y-%m-%d") for date in X_copy.date]
+
 
 def train_test(X, y, date):
     train_index = X.parsed_date <= date
     test_date = sorted(list(set(X[X.parsed_date > date].parsed_date)))[0]
     test_index = X.parsed_date == test_date
-    X_train = X[train_index].reset_index().to_numpy()
+    X_train = X[train_index].reset_index().drop(["parsed_date", "index"], axis="columns")
+    X_train = X_train.values
     y_train = y[train_index]
-    X_test = X[test_index].reset_index().to_numpy()
+    X_test = X[test_index].reset_index().drop(["parsed_date", "index"], axis="columns").values
     y_test = y[test_index]
     return X_train, y_train, X_test, y_test
 
 dic = {}
 
-for date in sorted(list(set(X_boruta.parsed_date)))[:len(X_boruta.parsed_date) - 1:]:
+for date in sorted(list(set(X_boruta.parsed_date)))[:len(set(X_boruta.parsed_date)) - 1]:
     X_train, y_train, X_test, y_test = train_test(X_boruta, y, date)
 
     # Train and test
@@ -228,3 +232,10 @@ for date in sorted(list(set(X_boruta.parsed_date)))[:len(X_boruta.parsed_date) -
     r2_rf_boruta_train = r2_score(y_train, y_pred_lgb_train)
 
     dic[str(date)] = (RMSE_lgb_boruta_test, r2_rf_boruta_test, RMSE_lgb_boruta_train, r2_rf_boruta_train)
+    print(date)
+
+# Saving lgbm dict results with pickle
+filename="lgbm_dict"
+outfile = open(filename,'wb')
+pickle.dump(dic, outfile)
+outfile.close()
