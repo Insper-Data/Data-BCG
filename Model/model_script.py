@@ -194,10 +194,10 @@ r2_rf_boruta_train = r2_score(y_train, y_pred_lgb_train)
 X_boruta["parsed_date"] = [datetime.strptime(date, "%Y-%m-%d") for date in X_copy.date]
 
 
-def train_test(X, y, date):
-    train_index = X.parsed_date <= date
-    test_date = sorted(list(set(X[X.parsed_date > date].parsed_date)))[0]
-    test_index = X.parsed_date == test_date
+def train_test(X, y, id):
+    train_index = X.game_id <= id
+    test_id = sorted(list(set(X[X.game_id > id].game_id)))[0]
+    test_index = X.game_id == test_id
     X_train = X[train_index].reset_index().drop(["parsed_date", "index"], axis="columns")
     X_train = X_train.values
     y_train = y[train_index]
@@ -207,8 +207,8 @@ def train_test(X, y, date):
 
 dic = {}
 
-for date in sorted(list(set(X_boruta.parsed_date)))[:len(set(X_boruta.parsed_date)) - 1]:
-    X_train, y_train, X_test, y_test = train_test(X_boruta, y, date)
+for id in sorted(list(set(X_boruta.game_id)))[:len(set(X_boruta.game_id)) - 1]:
+    X_train, y_train, X_test, y_test = train_test(X_boruta, y, id)
 
     # Train and test
     lgb_train = lgb.Dataset(X_train, y_train, feature_name=selected_vars,
