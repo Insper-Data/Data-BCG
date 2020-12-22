@@ -1,7 +1,9 @@
 import pandas as pd
-import matplotlib.pyplot as mpl
+import matplotlib.pyplot as plt
 import seaborn as sn
 import pickle
+from siuba import *
+from datetime import datetime as dt
 
 # Opening SHAP results with pickle
 infile = open("lgbm_dict", "rb")
@@ -15,4 +17,17 @@ for name, values in lgbm_dict.items():
         r2 = pd.DataFrame({"date": [name], "r2_test": [values[1]], "r2_train":[values[3]]})
         df_r2 = df_r2.append(r2)
 
-sn.lineplot(data=df_r2, x="date", y="r2_test")
+        RMSE = pd.DataFrame({"date": [name], "test": [values[0]], "train": [values[2]]})
+        df_RMSE = df_RMSE.append(RMSE)
+
+# R2
+r2_melted = df_r2[df_r2.r2_test > 0].melt(id_vars="date") >> arrange(_.date)
+sn.lineplot(data = r2_melted, x = "date", y = "value", hue = "variable")
+
+r2_melted.to_csv("C:/Users/USER/Downloads/r2_results.csv")
+
+# RMSE
+RMSE_melted = df_RMSE.melt(id_vars="date") >> arrange(_.date)
+sn.lineplot(data = RMSE_melted, x = "date", y = "value", hue = "variable")
+
+RMSE_melted.to_csv("C:/Users/USER/Downloads/RMSE_results.csv")
