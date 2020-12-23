@@ -191,23 +191,41 @@ r2_rf_boruta_train = r2_score(y_train, y_pred_lgb_train)
 
 # Analyzing model performance over time
 X_boruta["game_id"] = X_copy["game_id"]
+X_boruta["year"] = X_copy["year"]
 
+# Experimental (nunca usei esse isin)
+
+valid_game_ids = (X_boruta >>
+    count(_.game_id) >>
+    filter(_.n >= 30)).game_id
+
+X_boruta = X_boruta[X_boruta.game_id.isin(valid_game_ids)]
+
+## Se não funcionar
+
+# valid_game_ids = (X_boruta >>
+#     count(_.game_id) >>
+#     filter(_.n >= 30))
+#
+# X_boruta = (X_boruta >>
+#                 semi_join(valid_game_ids, on="game_id"))
 
 def train_test(X, y, id):
     train_index = X.game_id <= id
     test_id = sorted(list(set(X[X.game_id > id].game_id)))[0]
     test_index = X.game_id == test_id
-    X_train = X[train_index].reset_index().drop(["game_id", "index"], axis="columns")
+    X_train = X[train_index].reset_index().drop(["game_id", "index", "year"], axis="columns")
     X_train = X_train.values
     y_train = y[train_index]
-    X_test = X[test_index].reset_index().drop(["game_id", "index"], axis="columns").values
+    X_test = X[test_index].reset_index().drop(["game_id", "index", "year"], axis="columns").values
     y_test = y[test_index]
     return X_train, y_train, X_test, y_test
 
 dic = {}
 
-for id in sorted(list(set(X_boruta.game_id)))[:len(set(X_boruta.game_id)) - 1]:
-    X_train, y_train, X_test, y_test = train_test(X_boruta, y, id)
+for year in sorted(list(set(X_boruta.year))):
+    for id in sorted(list(set(X_boruta.game_id)))[:len(set(X_boruta.game_id)) - 1]:
+    X_train, y_train, X_test, y_test = train_test(X_boruta.loc[X_boruta.year == year, :], y, id)
 
     # Train and test
     lgb_train = lgb.Dataset(X_train, y_train, feature_name=selected_vars,
@@ -230,7 +248,7 @@ for id in sorted(list(set(X_boruta.game_id)))[:len(set(X_boruta.game_id)) - 1]:
     RMSE_lgb_boruta_train = np.sqrt(mean_squared_error(y_pred_lgb_train, y_train))
     r2_rf_boruta_train = r2_score(y_train, y_pred_lgb_train)
 
-    dic[str(id)] = (RMSE_lgb_boruta_test, r2_rf_boruta_test, RMSE_lgb_boruta_train, r2_rf_boruta_train)
+    dic[str(id)] = (RMSE_lgb_boruta_test, r2_rf_boruta_test, RMSE_lgb_boruta_train, r2_rf_boruta_train, year)
     print(id)
 
 # # Saving lgbm dict results with pickle
