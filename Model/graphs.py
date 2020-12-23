@@ -9,6 +9,8 @@ from datetime import datetime as dt
 infile = open("lgbm_dict", "rb")
 lgbm_dict = pickle.load(infile)
 
+asdas=pickle.load(infile)
+
 
 df_r2 = pd.DataFrame(columns=["date", "r2_test", "r2_train"])
 df_RMSE = pd.DataFrame(columns=["date", "test", "train"])
