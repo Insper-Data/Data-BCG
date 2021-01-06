@@ -65,7 +65,6 @@ if BORUTA:
     boruta_vars = feature_names[feat_selector.support_].to_list()
 
     # Removed vars
-    removed_vars = [var for var in feature_names if var not in selected_vars]
 
     # Saving Boruta vars
     filename="boruta_perc_70"
@@ -178,25 +177,16 @@ RMSE_lgb_boruta_train = np.sqrt(mean_squared_error(y_pred_lgb_train, y_train))
 r2_rf_boruta_train = r2_score(y_train, y_pred_lgb_train)
 
 # # Analyzing model performance over time
+# X_boruta = X_copy[boruta_vars]
 # X_boruta["game_id"] = X_copy["game_id"]
 # X_boruta["year"] = X_copy["year"]
-#
-# # Experimental (nunca usei esse isin)
 #
 # valid_game_ids = (X_boruta >>
 #     count(_.game_id) >>
 #     filter(_.n >= 30)).game_id
 #
+# y = y[X_boruta.game_id.isin(valid_game_ids)]
 # X_boruta = X_boruta[X_boruta.game_id.isin(valid_game_ids)]
-#
-# ## Se não funcionar
-#
-# # valid_game_ids = (X_boruta >>
-# #     count(_.game_id) >>
-# #     filter(_.n >= 30))
-# #
-# # X_boruta = (X_boruta >>
-# #                 semi_join(valid_game_ids, on="game_id"))
 #
 # def train_test(X, y, id):
 #     train_index = X.game_id <= id
@@ -212,15 +202,17 @@ r2_rf_boruta_train = r2_score(y_train, y_pred_lgb_train)
 # dic = {}
 #
 # for year in sorted(list(set(X_boruta.year))):
-#     for id in sorted(list(set(X_boruta.game_id)))[:len(set(X_boruta.game_id)) - 1]:
-#         X_train, y_train, X_test, y_test = train_test(X_boruta.loc[X_boruta.year == year, :], y, id)
+#     for id in sorted(list(set(X_boruta[X_boruta.year == year].game_id)))[
+#               :len(set(X_boruta[X_boruta.year == year].game_id)) - 1]:
+#         X_train, y_train, X_test, y_test = train_test(X_boruta[X_boruta.year == year], y[X_boruta.year == year], id)
 #
 #         # Train and test
-#         lgb_train = lgb.Dataset(X_train, y_train, feature_name=selected_vars,
-#                                 categorical_feature=["state_cat", "birthplace_cat"])
+#         lgb_train = lgb.Dataset(X_train, y_train,
+#                                 feature_name=[x for x in X_boruta.columns if x != "year" and x != "game_id"],
+#                                 categorical_feature=["birthplace_cat"])
 #
 #         # Train
-#         lgbm_model = lgb.train(params, lgb_train)
+#         lgbm_model = lgb.train(best_params, lgb_train)
 #
 #         # predict test
 #         y_pred_lgb_test = lgbm_model.predict(X_test, num_iteration=lgbm_model.best_iteration)
@@ -239,10 +231,23 @@ r2_rf_boruta_train = r2_score(y_train, y_pred_lgb_train)
 #         dic[str(id)] = (RMSE_lgb_boruta_test, r2_rf_boruta_test, RMSE_lgb_boruta_train, r2_rf_boruta_train, year)
 #         print(id)
 #
-# # # Saving lgbm dict results with pickle
-# filename="lgbm_dict_gameid"
-# outfile = open(filename,'wb')
+# # Saving lgbm dict results with pickle
+# filename = "lgbm_dict_gameid"
+# outfile = open(filename, 'wb')
 # pickle.dump(dic, outfile)
 # outfile.close()
-# n_ids = X_boruta >> count(_.game_id)
 #
+# # Saving data frames
+#
+# df_r2 = pd.DataFrame(columns=["game_id", "year", "r2_test", "r2_train"])
+# df_RMSE = pd.DataFrame(columns=["game_id", "year", "test", "train"])
+#
+# for name, values in dic.items():
+#         r2 = pd.DataFrame({"game_id": [name], "year": [values[4]], "r2_test": [values[1]], "r2_train":[values[3]]})
+#         df_r2 = df_r2.append(r2)
+#
+#         RMSE = pd.DataFrame({"game_id": [name], "year": [values[4]], "test": [values[0]], "train": [values[2]]})
+#         df_RMSE = df_RMSE.append(RMSE)
+#
+# df_r2.to_csv("r2_results.csv")
+# df_RMSE.to_csv("RMSE_results.csv")
