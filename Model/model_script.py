@@ -65,7 +65,7 @@ if BORUTA:
     boruta_vars = feature_names[feat_selector.support_].to_list()
 
     # Removed vars
-    removed_vars = [var for var in feature_names if var not in boruta_vars]
+    removed_vars = [var for var in feature_names if var not in selected_vars]
 
     # Saving Boruta vars
     filename="boruta_perc_70"
@@ -182,6 +182,8 @@ r2_rf_boruta_train = r2_score(y_train, y_pred_lgb_train)
 # X_boruta["game_id"] = X_copy["game_id"]
 # X_boruta["year"] = X_copy["year"]
 #
+# # Experimental (nunca usei esse isin)
+#
 # valid_game_ids = (X_boruta >>
 #     count(_.game_id) >>
 #     filter(_.n >= 30)).game_id
@@ -199,6 +201,7 @@ r2_rf_boruta_train = r2_score(y_train, y_pred_lgb_train)
 #     X_test = X[test_index].reset_index().drop(["game_id", "index", "year"], axis="columns").values
 #     y_test = y[test_index]
 #     return X_train, y_train, X_test, y_test
+#
 #
 # dic = {}
 #
