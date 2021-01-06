@@ -65,6 +65,7 @@ if BORUTA:
     boruta_vars = feature_names[feat_selector.support_].to_list()
 
     # Removed vars
+    removed_vars = [var for var in feature_names if var not in boruta_vars]
 
     # Saving Boruta vars
     filename="boruta_perc_70"
